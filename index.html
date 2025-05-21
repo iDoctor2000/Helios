@@ -127,13 +127,12 @@
             border: 1px solid #e0e0e0;
             border-radius: 5px;
             background-color: #fdfdfd;
-            height: 400px; /* Altura fija para los contenedores de gráficos */
-            position: relative; /* Necesario para que Chart.js se ajuste bien */
+            height: 400px; 
+            position: relative; 
         }
         .chart-container canvas {
-            max-height: 100%; /* Asegura que el canvas no exceda el contenedor */
+            max-height: 100%; 
         }
-
 
         footer {
             text-align: center;
@@ -157,7 +156,7 @@
                 margin-bottom: 10px;
             }
             .kpi-card {
-                flex-basis: 100%; /* KPIs stack on smaller screens */
+                flex-basis: 100%; 
             }
         }
     </style>
@@ -169,10 +168,10 @@
 
     <main>
         <section id="file-upload-section">
-            <h2>Cargar Archivo PDF</h2>
+            <h2>Cargar Archivo(s) PDF</h2>
             <div id="drop-zone">
-                <p>Arrastra y suelta el archivo PDF aquí, o haz clic para seleccionar.</p>
-                <input type="file" id="pdf-file-input" accept=".pdf" style="display: none;">
+                <p>Arrastra y suelta el/los archivo(s) PDF aquí, o haz clic para seleccionar.</p>
+                <input type="file" id="pdf-file-input" accept=".pdf" style="display: none;" multiple>
             </div>
             <p id="file-name"></p>
         </section>
@@ -245,315 +244,254 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
         // --- Contenido de parser.js ---
-        /**
-         * Cleans and normalizes a value string.
-         * Converts "1.234,56" to 1234.56 or "TEXT" to null if not a number.
-         * Handles special values like "BO", "LE", "E", "T".
-         * @param {string} valueStr The string value from the table cell.
-         * @returns {number|string|null} The cleaned value or null.
-         */
+        // !!! ESTA SECCIÓN ES LA MÁS CRÍTICA Y PROBABLEMENTE NECESITE AJUSTES !!!
+        // !!! REVISA LA CONSOLA (F12) PARA VER EL TEXTO EXTRAÍDO DEL PDF Y ADAPTA ESTAS FUNCIONES !!!
         function cleanValue(valueStr) {
             if (typeof valueStr !== 'string') return valueStr;
             const cleanedStr = valueStr.trim();
-
-            const specialCodes = ["BO", "LE", "E", "T", "WO", "-", "","S/D"];
-            if (specialCodes.includes(cleanedStr.toUpperCase())) {
-                return null; 
-            }
-
-            let numStr = cleanedStr.replace(/\./g, ''); 
-            numStr = numStr.replace(/,/, '.');       
-            numStr = numStr.replace('%', ''); // Quitar símbolo de porcentaje para convertir
-
-            if (!isNaN(parseFloat(numStr)) && isFinite(numStr)) {
-                return parseFloat(numStr);
-            }
-            return cleanedStr; 
+            const specialCodes = ["BO", "LE", "E", "T", "WO", "-", "","S/D", "NULL"];
+            if (specialCodes.includes(cleanedStr.toUpperCase())) return null;
+            let numStr = cleanedStr.replace(/\./g, '');
+            numStr = numStr.replace(/,/, '.');
+            numStr = numStr.replace('%', '');
+            if (!isNaN(parseFloat(numStr)) && isFinite(numStr)) return parseFloat(numStr);
+            return cleanedStr; // Devuelve como texto si no es un número reconocible
         }
 
         function getRelevantPageText(allPagesText, startPage, endPage = null) {
             let relevantText = "";
             const startIndex = startPage - 1;
             const endIndex = endPage ? endPage - 1 : startIndex;
-
             for (let i = startIndex; i <= endIndex && i < allPagesText.length; i++) {
                 relevantText += allPagesText[i] + "\n";
             }
             return relevantText;
         }
 
+        // !!! EJEMPLO DE PARSER: AJUSTAR SEGÚN EL TEXTO REAL EXTRAÍDO !!!
         function parseEntradasUrgencias(tableText) {
+            console.log("--- Parseando Entradas Urgencias ---");
+            // console.log("Texto para Entradas Urgencias:", tableText.substring(0, 500) + "..."); // Muestra una parte del texto
             const lines = tableText.split('\n').filter(line => line.trim() !== "");
             const data = [];
             let dates = [];
             let currentArea = "";
             
-            const dateLineIndex = lines.findIndex(line => line.toLowerCase().includes("puerta urgencias") && (line.includes("04/21") || line.includes("04 / 21"))); //
+            // AJUSTAR ESTA LÓGICA BASADO EN EL TEXTO REAL DE TU PDF
+            const dateLineIndex = lines.findIndex(line => line.toLowerCase().includes("puerta urgencias") && (line.includes("04/21") || line.includes("04 / 21")));
             if (dateLineIndex === -1) {
-                console.error("Cabecera de fechas no encontrada para Entradas Urgencias");
+                console.error("Cabecera de fechas NO encontrada para Entradas Urgencias. Revisa el texto del PDF.");
                 return [];
             }
 
-            const headerCells = lines[dateLineIndex].split(/\s{2,}/).map(s => s.replace(/"/g, '').trim()); // Dividir por múltiples espacios
-            dates = headerCells.filter(cell => /\d{2}\/\d{2}/.test(cell)); // Coger solo las fechas
+            const headerCellsOriginal = lines[dateLineIndex].split(/\s{2,}/); // Dividir por 2 o más espacios
+            const headerCells = headerCellsOriginal.map(s => s.replace(/"/g, '').trim());
+            dates = headerCells.filter(cell => /\d{2}\s*\/\s*\d{2}/.test(cell)).map(d => d.replace(/\s/g, ''));
+            console.log("Fechas detectadas (Urgencias):", dates);
 
             const areaRegexGlobal = /^(Area-?\s*([IVX]+|[\w\s]+)-?[\w\s]+)/i;
 
             for (let i = dateLineIndex + 1; i < lines.length; i++) {
                 const line = lines[i].trim();
+                // console.log("Procesando línea Urgencias:", line); // DEBUG
                 if (!line) continue;
 
-                const cells = line.split(/\s{2,}/).map(s => s.replace(/"/g, '').trim()); // Dividir por múltiples espacios también para datos
+                const cells = line.split(/\s{2,}/).map(s => s.replace(/"/g, '').trim());
+                // console.log("Celdas extraídas Urgencias:", cells); // DEBUG
 
                 let potentialArea = cells[0];
                 let puertaUrgencias = "";
                 let dataCellsStartIndex = 1;
 
                 if (areaRegexGlobal.test(potentialArea)) {
-                    currentArea = potentialArea.replace(/^Area-?\s*/, "Área ").replace(/\s*Dete$/, " Oeste").replace(/\s*Norne$/, " Noroeste").replace(/\s*Alliplano/, " Altiplano").replace(/\s*Lneca/, " Lorca"); //
+                    currentArea = potentialArea.replace(/^Area-?\s*/, "Área ").replace(/\s*Dete$/, " Oeste").replace(/\s*Norne$/, " Noroeste").replace(/\s*Alliplano/, " Altiplano").replace(/\s*Lneca/, " Lorca");
                     puertaUrgencias = cells[1];
                     dataCellsStartIndex = 2;
-                } else if (currentArea && cells.length > dates.length) { // Asumir que es una continuación de la misma área
+                } else if (currentArea && cells.length > dates.length && !areaRegexGlobal.test(cells[0])) { 
                     puertaUrgencias = cells[0];
                     dataCellsStartIndex = 1;
-                } else {
-                    continue; // No es una línea de datos válida o no se puede determinar el área/puerta
+                } else if (currentArea && cells.length <= dates.length +1 && !areaRegexGlobal.test(cells[0]) && cells[0] !== "") { // Para el caso HUSL Mat
+                     puertaUrgencias = cells[0];
+                     dataCellsStartIndex = 1;
+                }
+                 else {
+                    // console.warn("Línea no reconocida o sin área actual (Urgencias):", line); // DEBUG
+                    continue; 
                 }
                 
-                if (!puertaUrgencias || puertaUrgencias.toUpperCase().includes("TOTAL")) continue;
+                if (!puertaUrgencias || puertaUrgencias.toUpperCase().includes("TOTAL") || puertaUrgencias.length < 3) continue; // Evitar cabeceras o totales
 
                 for (let j = 0; j < dates.length; j++) {
                     const valueStr = cells[j + dataCellsStartIndex];
                     const value = cleanValue(valueStr);
-                    if (dates[j] && value !== null && value !== "") {
+                    if (dates[j] && value !== null && value !== "" && !isNaN(value)) { // Asegurarse que es un número
                         data.push({
                             area: currentArea,
                             puertaUrgencias: puertaUrgencias,
-                            fecha: dates[j].replace(/\s/g, ''), // Asegurar que no haya espacios en la fecha
+                            fecha: dates[j],
                             entradas: value
                         });
                     }
                 }
             }
-            console.log("Parsed Entradas Urgencias:", data);
+            if (data.length === 0) console.warn("No se extrajeron datos para Entradas Urgencias. Revisa el parser y el texto del PDF.");
+            console.log("Parsed Entradas Urgencias:", data.slice(0,5)); // Muestra solo los primeros 5 para no llenar la consola
             return data;
         }
 
+        // !!! EJEMPLO DE PARSER: AJUSTAR SEGÚN EL TEXTO REAL EXTRAÍDO !!!
         function parsePacientesIngresados(tableText) {
+            console.log("--- Parseando Pacientes Ingresados ---");
             const lines = tableText.split('\n').filter(line => line.trim() !== "");
             const data = [];
             let dates = [];
 
-            const dateLineIndex = lines.findIndex(line => (line.includes("04/21") || line.includes("04 / 21")) && (line.includes("05/20") || line.includes("05 / 20"))); //
+            const dateLineIndex = lines.findIndex(line => (line.includes("04/21") || line.includes("04 / 21")) && (line.includes("05/20") || line.includes("05 / 20")));
             if (dateLineIndex === -1) {
-                console.error("Cabecera de fechas no encontrada para Pacientes Ingresados");
+                console.error("Cabecera de fechas NO encontrada para Pacientes Ingresados.");
                 return [];
             }
-            dates = lines[dateLineIndex].split(/\s{2,}/).map(s => s.replace(/"/g, '').trim()).filter(s => /\d{2}\s*\/\s*\d{2}/.test(s) || /\d{2}\/\d{2}/.test(s)).map(s => s.replace(/\s/g, '')); //
+            dates = lines[dateLineIndex].split(/\s{2,}/).map(s => s.replace(/"/g, '').trim()).filter(s => /\d{2}\s*\/\s*\d{2}/.test(s) || /\d{2}\/\d{2}/.test(s)).map(s => s.replace(/\s/g, ''));
+            console.log("Fechas detectadas (Ingresados):", dates);
 
-            const normalizedAreaNames = {
-                "Areal- Murcia Deste": "Área I - Murcia Oeste", //
-                "Areall Cartagena": "Área II - Cartagena", //
-                "Area III Lorca": "Área III - Lorca", //
-                "Area IV- Norne": "Área IV - Noroeste", //
-                "Area V Altiplano": "Área V - Altiplano", //
-                "Area VI-Vega Media del Segura": "Área VI - Vega Media del Segura", //
-                "Anea VII Murcia Este": "Área VII - Murcia Este", //
-                "Area Viii Mar Menor": "Área VIII - Mar Menor", //
-                "Area IX-Vega Alta del Segira": "Área IX - Vega Alta del Segura" //
+
+            const normalizedAreaNames = { /* COPIADO DE LA VERSIÓN ANTERIOR, AJUSTAR SI ES NECESARIO */
+                "Areal- Murcia Deste": "Área I - Murcia Oeste", "Areall Cartagena": "Área II - Cartagena", "Area III Lorca": "Área III - Lorca", "Area IV- Norne": "Área IV - Noroeste", "Area V Altiplano": "Área V - Altiplano", "Area VI-Vega Media del Segura": "Área VI - Vega Media del Segura", "Anea VII Murcia Este": "Área VII - Murcia Este", "Area Viii Mar Menor": "Área VIII - Mar Menor", "Area IX-Vega Alta del Segira": "Área IX - Vega Alta del Segura"
             };
             const areaKeys = Object.keys(normalizedAreaNames);
 
             for (let i = dateLineIndex + 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                
-                const cells = line.split(/\s{2,}/).map(s => s.replace(/"/g, '').trim()); // Dividir por múltiples espacios
+                const cells = line.split(/\s{2,}/).map(s => s.replace(/"/g, '').trim());
                 const potentialAreaKey = cells[0];
-
-                const matchedAreaKey = areaKeys.find(key => potentialAreaKey.startsWith(key.split(" ")[0])); // Coincidencia parcial para nombres de área
+                const matchedAreaKey = areaKeys.find(key => potentialAreaKey.toLowerCase().startsWith(key.split(" ")[0].toLowerCase().substring(0,6)));
                 
                 if (matchedAreaKey) {
                     const area = normalizedAreaNames[matchedAreaKey];
                     for (let j = 0; j < dates.length; j++) {
                         const valueStr = cells[j + 1];
                         const value = cleanValue(valueStr);
-                        if (dates[j] && value !== null && value !== "") {
-                            data.push({
-                                area: area,
-                                fecha: dates[j],
-                                pacientesIngresados: value
-                            });
+                        if (dates[j] && value !== null && value !== "" && !isNaN(value)) {
+                            data.push({ area: area, fecha: dates[j], pacientesIngresados: value });
                         }
                     }
                 }
             }
-            console.log("Parsed Pacientes Ingresados:", data);
+            if (data.length === 0) console.warn("No se extrajeron datos para Pacientes Ingresados.");
+            console.log("Parsed Pacientes Ingresados:", data.slice(0,5));
             return data;
         }
         
+        // !!! EJEMPLO DE PARSER: AJUSTAR SEGÚN EL TEXTO REAL EXTRAÍDO !!!
         function parseOcupacionCamas(tableText) {
+            console.log("--- Parseando Ocupacion Camas ---");
             const lines = tableText.split('\n').filter(line => line.trim() !== "");
             const data = [];
-            const targetDateColumnName = "05/20"; // El PDF muestra datos para esta fecha en la tabla de % Ocupación
+            const targetDateColumnName = "05/20";
             
-            const areaNameMap = { // Mapeo basado en lo que se ve en la página 15 del PDF
-                "Aves Morcia Dette": "Área I - Murcia Oeste",
-                "Cartagena": "Área II - Cartagena",
-                "Area Lorca": "Área III - Lorca", // Puede necesitar ajuste
-                "Noroeste": "Área IV - Noroeste",
-                "Arsa V Altiplano": "Área V - Altiplano",
-                "Area Vi Vega Meutia del Segura": "Área VI - Vega Media del Segura",
-                "Area V Murcia": "Área VII - Murcia Este", // Asumiendo que es Murcia Este
-                "Area V Mar Menor": "Área VIII - Mar Menor",
-                "Area Vega Alta del Segira": "Área IX - Vega Alta del Segura"
+            const areaNameMap = { /* COPIADO DE LA VERSIÓN ANTERIOR, AJUSTAR SI ES NECESARIO */
+                "Aves Morcia Dette": "Área I - Murcia Oeste", "Cartagena": "Área II - Cartagena", "Area Lorca": "Área III - Lorca", "Noroeste": "Área IV - Noroeste", "Arsa V Altiplano": "Área V - Altiplano", "Area Vi Vega Meutia del Segura": "Área VI - Vega Media del Segura", "Area V Murcia": "Área VII - Murcia Este", "Area V Mar Menor": "Área VIII - Mar Menor", "Area Vega Alta del Segira": "Área IX - Vega Alta del Segura"
             };
             const areaKeys = Object.keys(areaNameMap);
-
             let currentArea = "";
-            let dateColumns = [];
-            let ocupadasColIndex = -1;
-
-            // Buscar la línea de cabecera de fechas
-            // La estructura de cabecera en la pág. 15 es compleja.
-            // Intentaremos encontrar la columna de "05/20" para "Cames Ocupades".
-            const headerLineIndex = lines.findIndex(l => l.includes("04/21") && l.includes("05/20") && l.toLowerCase().includes("ocupades")); //
-            if (headerLineIndex !== -1) {
-                 // Esta es una simplificación extrema. La cabecera de fechas es compleja.
-                 // Asumimos que la última columna significativa es 05/20 para Camas Ocupadas.
-            }
-
 
             for (const line of lines) {
-                const cells = line.split(/\s{3,}|,\s*/).map(s => s.replace(/"/g, '').trim()); // Dividir por múltiples espacios o coma seguida de espacio
-
+                // ESTA PARTE ES MUY HEURÍSTICA Y PUEDE FALLAR FÁCILMENTE.
+                // SE BASA EN ENCONTRAR LÍNEAS QUE CONTENGAN "Cames Ocupades" Y LUEGO BUSCAR UN %
+                const cells = line.split(/\s{3,}|,\s*/).map(s => s.replace(/"/g, '').trim());
                 const potentialAreaKey = cells[0];
-                const matchedAreaKey = areaKeys.find(key => potentialAreaKey.startsWith(key.split(" ")[0]));
+                const matchedAreaKey = areaKeys.find(key => potentialAreaKey.toLowerCase().startsWith(key.split(" ")[0].toLowerCase().substring(0,4)));
 
-                if (matchedAreaKey) {
-                    currentArea = areaNameMap[matchedAreaKey];
-                }
+                if (matchedAreaKey) currentArea = areaNameMap[matchedAreaKey];
 
-                // Buscar la línea específica de "Cames Ocupades" para el área actual
-                if (currentArea && cells.some(cell => cell.toLowerCase().includes("cames ocupades"))) { //
-                    // Tomar el último valor numérico como el de 05/20 (muy heurístico)
-                    for (let k = cells.length - 1; k > 0; k--) {
+                if (currentArea && cells.some(cell => cell.toLowerCase().includes("cames ocupades"))) {
+                    for (let k = cells.length - 1; k > 0; k--) { // Buscar el % de derecha a izquierda
                         const ocupacionStr = cells[k];
                         if (ocupacionStr && ocupacionStr.includes('%')) {
                              const ocupacion = cleanValue(ocupacionStr);
-                             if (ocupacion !== null) {
-                                data.push({
-                                    area: currentArea,
-                                    fecha: targetDateColumnName, // Asumimos que este valor es para 05/20
-                                    porcentajeOcupadas: ocupacion
-                                });
-                                break; // Tomar solo el primer valor % de derecha a izquierda
+                             if (ocupacion !== null && !isNaN(ocupacion)) {
+                                data.push({ area: currentArea, fecha: targetDateColumnName, porcentajeOcupadas: ocupacion });
+                                break; 
                              }
                         }
                     }
-                    currentArea = ""; // Resetear para la siguiente área
+                    currentArea = ""; 
                 }
             }
+            if (data.length === 0) console.warn("No se extrajeron datos para Ocupación Camas.");
             console.log("Parsed Ocupacion Camas (Simplificado para 20/05):", data);
             return data;
         }
 
+        // !!! EJEMPLO DE PARSER: AJUSTAR SEGÚN EL TEXTO REAL EXTRAÍDO !!!
         function parsePacientesCovidGripeVRS(tableText) {
+            console.log("--- Parseando Pacientes COVID/Gripe/VRS ---");
             const lines = tableText.split('\n').filter(line => line.trim() !== "");
             const data = [];
             let dates = [];
 
-            const dateLineIndex = lines.findIndex(line => line.toLowerCase().includes("desglose") && (line.includes("04/21") || line.includes("04 / 21"))); //
+            const dateLineIndex = lines.findIndex(line => line.toLowerCase().includes("desglose") && (line.includes("04/21") || line.includes("04 / 21")));
             if (dateLineIndex === -1) {
-                console.error("Cabecera de fechas no encontrada para Pacientes COVID/Gripe/VRS");
+                console.error("Cabecera de fechas NO encontrada para Pacientes COVID/Gripe/VRS.");
                 return [];
             }
-            // Heurística para extraer fechas de la cabecera (puede necesitar ajustes)
-            dates = lines[dateLineIndex].split(/\s{2,}|,(?!\s)/) // Dividir por múltiples espacios o comas no seguidas de espacio
-                                    .map(s => s.replace(/"/g, '').trim())
-                                    .filter(s => /\d{2}\s*\/\s*\d{2}/.test(s) || /\d{2}\/\d{2}/.test(s)) //
-                                    .map(s => s.replace(/\s/g, ''));
-
+            dates = lines[dateLineIndex].split(/\s{2,}|,(?!\s)/).map(s => s.replace(/"/g, '').trim()).filter(s => /\d{2}\s*\/\s*\d{2}/.test(s) || /\d{2}\/\d{2}/.test(s)).map(s => s.replace(/\s/g, ''));
+            console.log("Fechas detectadas (COVID/Gripe/VRS):", dates);
 
             let currentArea = "";
-            const areaNameMap = { // Basado en Pág. 11 del PDF
-                "Areal- Murcia Oeste": "Área I - Murcia Oeste",
-                "Arnall Cartagena": "Área II - Cartagena",
-                "Arealll- Lurza": "Área III - Lorca", // Asumiendo 'Lorca' por 'Lurza'
-                "Area- Norgeste": "Área IV - Noroeste",
-                "Areav- Altiplano": "Área V - Altiplano",
-                "Arna VI-Veg Media del Segura": "Área VI - Vega Media del Segura",
-                "Area VII- Murcia Ege": "Área VII - Murcia Este", // Asumiendo 'Este' por 'Ege'
-                "Area Mill Mar Menor": "Área VIII - Mar Menor", // Asumiendo 'VIII' por 'Mill'
-                "Area X-Vega Alta del Segura": "Área IX - Vega Alta del Segura"
+            const areaNameMap = { /* COPIADO DE LA VERSIÓN ANTERIOR, AJUSTAR SI ES NECESARIO */
+                "Areal- Murcia Oeste": "Área I - Murcia Oeste", "Arnall Cartagena": "Área II - Cartagena", "Arealll- Lurza": "Área III - Lorca", "Area- Norgeste": "Área IV - Noroeste", "Areav- Altiplano": "Área V - Altiplano", "Arna VI-Veg Media del Segura": "Área VI - Vega Media del Segura", "Area VII- Murcia Ege": "Área VII - Murcia Este", "Area Mill Mar Menor": "Área VIII - Mar Menor", "Area X-Vega Alta del Segura": "Área IX - Vega Alta del Segura"
             };
             const areaKeys = Object.keys(areaNameMap);
-
 
             for (let i = dateLineIndex + 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-
-                // Dividir por comas, pero ser cuidadoso si hay comas en nombres (poco probable aquí)
-                // O usar split por múltiples espacios si es más consistente en el texto extraído
-                const cells = line.split(/,(?![^"]*"(?:(?:[^"]*"){2})*[^"]*$)/) // Split por comas no dentro de comillas
-                                  .map(s => s.replace(/"/g, '').trim());
-                
+                const cells = line.split(/,(?![^"]*"(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
                 const firstCell = cells[0];
-                const matchedAreaKey = areaKeys.find(key => firstCell.startsWith(key.split(" ")[0]));
+                const matchedAreaKey = areaKeys.find(key => firstCell.toLowerCase().startsWith(key.split(" ")[0].toLowerCase().substring(0,5)));
 
-                if (matchedAreaKey) {
-                    currentArea = areaNameMap[matchedAreaKey];
-                }
+                if (matchedAreaKey) currentArea = areaNameMap[matchedAreaKey];
 
-                const desglose = cells[1] ? cells[1].toUpperCase() : ""; // COVID, GRIPE, VRS
-
+                const desglose = cells[1] ? cells[1].toUpperCase() : "";
                 if (currentArea && (desglose === "COVID" || desglose === "GRIPE" || desglose === "VRS")) {
                     for (let j = 0; j < dates.length; j++) {
-                        const valueStr = cells[j + 2]; // Los valores empiezan desde la 3ra celda
+                        const valueStr = cells[j + 2];
                         const value = cleanValue(valueStr);
-                        if (dates[j] && value !== null && value !== "") {
-                            data.push({
-                                area: currentArea,
-                                tipo: desglose,
-                                fecha: dates[j],
-                                pacientes: value
-                            });
+                        if (dates[j] && value !== null && value !== "" && !isNaN(value)) {
+                            data.push({ area: currentArea, tipo: desglose, fecha: dates[j], pacientes: value });
                         }
                     }
                 }
             }
-            console.log("Parsed Pacientes COVID/Gripe/VRS:", data);
+            if (data.length === 0) console.warn("No se extrajeron datos para Pacientes COVID/Gripe/VRS.");
+            console.log("Parsed Pacientes COVID/Gripe/VRS:", data.slice(0,5));
             return data;
         }
 
-        async function parsePDFData(allPagesText) {
+        async function parsePDFData(allPagesText, fileNameForContext = "archivo") {
+            console.log(`Iniciando parseo para: ${fileNameForContext}`);
             const structuredData = {
-                entradasUrgencias: [],
-                pacientesIngresados: [],
-                ocupacionCamas: [],
-                pacientesCovidGripeVRS: [],
+                entradasUrgencias: [], pacientesIngresados: [], ocupacionCamas: [], pacientesCovidGripeVRS: [],
             };
 
-            const urgenciasText = getRelevantPageText(allPagesText, 3, 3); // Página 3 para "Entradas totales en Urgencias"
-            if (urgenciasText) {
-                structuredData.entradasUrgencias = parseEntradasUrgencias(urgenciasText);
-            }
-
-            const ingresadosText = getRelevantPageText(allPagesText, 9, 9); // Página 9 para "Pacientes Ingresados"
-            if (ingresadosText) {
-                structuredData.pacientesIngresados = parsePacientesIngresados(ingresadosText);
-            }
+            // Los números de página son ejemplos, ajústalos según tu PDF
+            // Página 3 del PDF es índice 2 en allPagesText
+            const urgenciasText = getRelevantPageText(allPagesText, 3, 3); 
+            if (urgenciasText) structuredData.entradasUrgencias = parseEntradasUrgencias(urgenciasText);
             
-            const ocupacionText = getRelevantPageText(allPagesText, 15, 15); // Página 15 para "% Ocupación Camas"
-             if (ocupacionText) {
-                structuredData.ocupacionCamas = parseOcupacionCamas(ocupacionText);
-            }
+            // Página 9 del PDF es índice 8
+            const ingresadosText = getRelevantPageText(allPagesText, 9, 9); 
+            if (ingresadosText) structuredData.pacientesIngresados = parsePacientesIngresados(ingresadosText);
+            
+            // Página 15 del PDF es índice 14
+            const ocupacionText = getRelevantPageText(allPagesText, 15, 15); 
+             if (ocupacionText) structuredData.ocupacionCamas = parseOcupacionCamas(ocupacionText);
 
-            const covidGripeVRSText = getRelevantPageText(allPagesText, 11, 11); // Página 11 para "Pacientes ... Covid, Gripe o VRS"
-            if (covidGripeVRSText) {
-                structuredData.pacientesCovidGripeVRS = parsePacientesCovidGripeVRS(covidGripeVRSText);
-            }
+            // Página 11 del PDF es índice 10
+            const covidGripeVRSText = getRelevantPageText(allPagesText, 11, 11); 
+            if (covidGripeVRSText) structuredData.pacientesCovidGripeVRS = parsePacientesCovidGripeVRS(covidGripeVRSText);
 
             return structuredData;
         }
@@ -564,284 +502,134 @@
         function populateFilters(data) {
             const dateFilter = document.getElementById('date-filter');
             const areaFilter = document.getElementById('area-filter');
-            
             const allDates = new Set();
             const allAreas = new Set();
 
-            if (data.entradasUrgencias) {
-                data.entradasUrgencias.forEach(item => {
-                    allDates.add(item.fecha);
-                    allAreas.add(item.area);
-                    if (item.puertaUrgencias) allAreas.add(item.puertaUrgencias);
-                });
-            }
-            if (data.ocupacionCamas) {
-                 data.ocupacionCamas.forEach(item => {
-                    allDates.add(item.fecha);
-                    allAreas.add(item.area);
-                });
-            }
-             if (data.pacientesIngresados) {
-                data.pacientesIngresados.forEach(item => {
-                    allDates.add(item.fecha);
-                    allAreas.add(item.area);
-                });
-            }
-            if (data.pacientesCovidGripeVRS) {
-                data.pacientesCovidGripeVRS.forEach(item => {
-                    allDates.add(item.fecha);
-                    allAreas.add(item.area);
-                });
-            }
+            (data.entradasUrgencias || []).forEach(item => { allDates.add(item.fecha); allAreas.add(item.area); if (item.puertaUrgencias) allAreas.add(item.puertaUrgencias); });
+            (data.ocupacionCamas || []).forEach(item => { allDates.add(item.fecha); allAreas.add(item.area); });
+            (data.pacientesIngresados || []).forEach(item => { allDates.add(item.fecha); allAreas.add(item.area); });
+            (data.pacientesCovidGripeVRS || []).forEach(item => { allDates.add(item.fecha); allAreas.add(item.area); });
 
             const sortedDates = Array.from(allDates).sort((a, b) => {
-                const [dayA, monthA] = a.split('/');
-                const [dayB, monthB] = b.split('/');
-                return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`);
+                const [dayA, monthA] = a.split('/'); const [dayB, monthB] = b.split('/');
+                return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`); // Asume año 2025 para ordenar
             });
 
             dateFilter.innerHTML = '<option value="all">Todas las Fechas</option>';
-            sortedDates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date;
-                option.textContent = date;
-                dateFilter.appendChild(option);
-            });
+            sortedDates.forEach(date => { const option = document.createElement('option'); option.value = date; option.textContent = date; dateFilter.appendChild(option); });
 
             areaFilter.innerHTML = '<option value="all">Todas las Áreas/Hospitales</option>';
-            Array.from(allAreas).sort().forEach(area => {
-                if (!area) return; // Omitir valores nulos o indefinidos
-                const option = document.createElement('option');
-                option.value = area;
-                option.textContent = area;
-                areaFilter.appendChild(option);
-            });
+            Array.from(allAreas).sort().forEach(area => { if (!area) return; const option = document.createElement('option'); option.value = area; option.textContent = area; areaFilter.appendChild(option); });
         }
 
         function updateKPIs(data) {
-            const targetDate = "20/05"; // Basado en ejemplos de gráficos del PDF como "el día 20/05/2025"
+            const targetDate = "20/05"; // Para KPIs "del día"
 
+            let kpiOcupacion = "N/A";
             if (data.ocupacionCamas && data.ocupacionCamas.length > 0) {
-                const ocupacionHoy = data.ocupacionCamas.filter(d => d.fecha === targetDate);
+                const ocupacionHoy = data.ocupacionCamas.filter(d => d.fecha === targetDate && d.porcentajeOcupadas != null);
                 if (ocupacionHoy.length > 0) {
-                    const totalOcupacion = ocupacionHoy.reduce((sum, item) => sum + (item.porcentajeOcupadas || 0), 0);
-                    const avgOcupacion = ocupacionHoy.length > 0 ? totalOcupacion / ocupacionHoy.length : 0;
-                    document.getElementById('kpi-ocupacion-media').textContent = `${avgOcupacion.toFixed(2)} %`;
-                } else {
-                    document.getElementById('kpi-ocupacion-media').textContent = "N/A";
+                    const totalOcupacion = ocupacionHoy.reduce((sum, item) => sum + item.porcentajeOcupadas, 0);
+                    kpiOcupacion = `${(totalOcupacion / ocupacionHoy.length).toFixed(2)} %`;
                 }
-            } else {
-                 document.getElementById('kpi-ocupacion-media').textContent = "N/A";
             }
-            
-            document.getElementById('kpi-presion-media').textContent = 'N/A (Parsear)';
+            document.getElementById('kpi-ocupacion-media').textContent = kpiOcupacion;
+            document.getElementById('kpi-presion-media').textContent = 'N/A (Parsear)'; // Necesita datos de Presión Urgencias
 
-
+            let kpiTotalUrg = "N/A";
             if (data.entradasUrgencias && data.entradasUrgencias.length > 0) {
-                const urgenciasHUVAChọn = data.entradasUrgencias.find(d =>
-                    d.puertaUrgencias === "HUVA Gen" && d.fecha === targetDate //
-                );
-                document.getElementById('kpi-total-urgencias').textContent = urgenciasHUVAChọn ? urgenciasHUVAChọn.entradas : 'N/A';
-            } else {
-                 document.getElementById('kpi-total-urgencias').textContent = 'N/A';
+                const urgenciasTarget = data.entradasUrgencias.find(d => d.puertaUrgencias === "HUVA Gen" && d.fecha === targetDate);
+                if(urgenciasTarget) kpiTotalUrg = urgenciasTarget.entradas;
             }
+            document.getElementById('kpi-total-urgencias').textContent = kpiTotalUrg;
 
-
+            let kpiCovid = "N/A";
             if (data.pacientesCovidGripeVRS && data.pacientesCovidGripeVRS.length > 0) {
-                const covidAreaI = data.pacientesCovidGripeVRS.find(d =>
-                    d.area === "Área I - Murcia Oeste" && d.tipo === "COVID" && d.fecha === targetDate //
-                );
-                document.getElementById('kpi-pacientes-covid').textContent = covidAreaI ? covidAreaI.pacientes : 'N/A';
-            } else {
-                 document.getElementById('kpi-pacientes-covid').textContent = 'N/A';
+                const covidTarget = data.pacientesCovidGripeVRS.find(d => d.area === "Área I - Murcia Oeste" && d.tipo === "COVID" && d.fecha === targetDate);
+                if(covidTarget) kpiCovid = covidTarget.pacientes;
             }
+            document.getElementById('kpi-pacientes-covid').textContent = kpiCovid;
         }
 
         function renderChart(chartId, chartConfig) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-            if (charts[chartId]) {
-                charts[chartId].destroy(); 
-            }
+            const chartElement = document.getElementById(chartId);
+            if (!chartElement) { console.error(`Elemento canvas con ID ${chartId} no encontrado.`); return; }
+            const ctx = chartElement.getContext('2d');
+            if (charts[chartId]) charts[chartId].destroy();
             charts[chartId] = new Chart(ctx, chartConfig);
         }
 
-        function displayEntradasUrgenciasChart(urgenciasData, selectedArea = 'all') {
+        function displayEntradasUrgenciasChart(urgenciasDataAll, selectedArea = 'all') {
+            const urgenciasData = urgenciasDataAll || [];
             let filteredData = urgenciasData;
-            if (selectedArea !== 'all') {
-                filteredData = urgenciasData.filter(item => item.area === selectedArea || item.puertaUrgencias === selectedArea);
-            }
+            if (selectedArea !== 'all') filteredData = urgenciasData.filter(item => item.area === selectedArea || item.puertaUrgencias === selectedArea);
+            
             if (!filteredData || filteredData.length === 0) {
                  renderChart('chart-entradas-urgencias', {type: 'line', data:{labels:[], datasets:[]}, options:{plugins:{title:{display:true, text:'Sin datos para Entradas Urgencias con los filtros actuales'}}}});
                  return;
             }
 
-            const datasets = {}; 
-            const labels = new Set();
-
-            filteredData.forEach(item => {
-                const key = item.puertaUrgencias || item.area; 
-                if (!datasets[key]) datasets[key] = {};
-                datasets[key][item.fecha] = (datasets[key][item.fecha] || 0) + item.entradas;
-                labels.add(item.fecha);
-            });
-            
-            const sortedLabels = Array.from(labels).sort((a, b) => { 
-                const [dayA, monthA] = a.split('/');
-                const [dayB, monthB] = b.split('/');
-                return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`);
-            });
-
-            const chartDatasets = Object.keys(datasets).map((key, index) => {
-                const color = `hsl(${(index * (360 / (Object.keys(datasets).length || 1)))}, 70%, 50%)`;
-                return {
-                    label: key,
-                    data: sortedLabels.map(date => datasets[key][date] || 0),
-                    borderColor: color,
-                    backgroundColor: color + '33', 
-                    fill: false,
-                    tension: 0.1
-                };
-            });
-
-            renderChart('chart-entradas-urgencias', {
-                type: 'line',
-                data: {
-                    labels: sortedLabels,
-                    datasets: chartDatasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Entradas Totales en Urgencias por Día y Área/Puerta' }, //
-                        legend: { position: 'top' }
-                    },
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Número de Entradas' } } }
-                }
-            });
+            const datasets = {}; const labels = new Set();
+            filteredData.forEach(item => { const key = item.puertaUrgencias || item.area; if (!datasets[key]) datasets[key] = {}; datasets[key][item.fecha] = (datasets[key][item.fecha] || 0) + item.entradas; labels.add(item.fecha); });
+            const sortedLabels = Array.from(labels).sort((a, b) => { const [dayA, monthA] = a.split('/'); const [dayB, monthB] = b.split('/'); return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`); });
+            const chartDatasets = Object.keys(datasets).map((key, index) => { const color = `hsl(${(index * (360 / (Object.keys(datasets).length || 1)))}, 70%, 50%)`; return { label: key, data: sortedLabels.map(date => datasets[key][date] || 0), borderColor: color, backgroundColor: color + '33', fill: false, tension: 0.1 }; });
+            renderChart('chart-entradas-urgencias', { type: 'line', data: { labels: sortedLabels, datasets: chartDatasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Entradas Totales en Urgencias por Día y Área/Puerta' }, legend: { position: 'top' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Número de Entradas' } } } } });
         }
 
-        function displayOcupacionCamasChart(ocupacionData, selectedArea = 'all') {
+        function displayOcupacionCamasChart(ocupacionDataAll, selectedArea = 'all') {
+            const ocupacionData = ocupacionDataAll || [];
             let filteredData = ocupacionData;
-             if (selectedArea !== 'all') {
-                filteredData = ocupacionData.filter(item => item.area === selectedArea);
-            }
+             if (selectedArea !== 'all') filteredData = ocupacionData.filter(item => item.area === selectedArea);
             if (!filteredData || filteredData.length === 0) {
                  renderChart('chart-ocupacion-camas', {type: 'bar', data:{labels:[], datasets:[]}, options:{plugins:{title:{display:true, text:'Sin datos para Ocupación Camas con los filtros actuales'}}}});
                  return;
             }
-
-            const labels = filteredData.map(item => item.area);
-            const dataValues = filteredData.map(item => item.porcentajeOcupadas);
-
-            renderChart('chart-ocupacion-camas', {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '% Ocupación Camas (el 20/05)', //
-                        data: dataValues,
-                        backgroundColor: 'rgba(255, 159, 64, 0.5)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y', 
-                    plugins: { title: { display: true, text: '% Ocupación Camas (20/05)' } }, //
-                    scales: { x: { beginAtZero: true, max: 100, title: { display: true, text: 'Porcentaje (%)' } } }
-                }
-            });
+            const labels = filteredData.map(item => item.area); const dataValues = filteredData.map(item => item.porcentajeOcupadas);
+            renderChart('chart-ocupacion-camas', { type: 'bar', data: { labels: labels, datasets: [{ label: '% Ocupación Camas (el 20/05)', data: dataValues, backgroundColor: 'rgba(255, 159, 64, 0.5)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { title: { display: true, text: '% Ocupación Camas (20/05)' } }, scales: { x: { beginAtZero: true, max: 100, title: { display: true, text: 'Porcentaje (%)' } } } } });
         }
 
-        function displayPacientesCovidChart(covidData, selectedArea = 'all') {
+        function displayPacientesCovidChart(covidDataAll, selectedArea = 'all') {
+            const covidData = covidDataAll || [];
             let filteredData = covidData;
-            if (selectedArea !== 'all') {
-                filteredData = covidData.filter(item => item.area === selectedArea);
-            }
+            if (selectedArea !== 'all') filteredData = covidData.filter(item => item.area === selectedArea);
              if (!filteredData || filteredData.length === 0) {
                  renderChart('chart-pacientes-ingresados-covid', {type: 'line', data:{labels:[], datasets:[]}, options:{plugins:{title:{display:true, text:'Sin datos para Pacientes COVID/Gripe/VRS con los filtros actuales'}}}});
                  return;
             }
-
-            const datasets = {}; 
-            const labels = new Set();
-
-            filteredData.forEach(item => {
-                const key = item.tipo;
-                if (!datasets[key]) datasets[key] = {};
-                datasets[key][item.fecha] = (datasets[key][item.fecha] || 0) + item.pacientes;
-                labels.add(item.fecha);
-            });
-
-            const sortedLabels = Array.from(labels).sort((a, b) => {
-                const [dayA, monthA] = a.split('/');
-                const [dayB, monthB] = b.split('/');
-                return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`);
-            });
-            
-            const typeColors = {
-                "COVID": "rgba(255, 99, 132, 0.7)", 
-                "GRIPE": "rgba(54, 162, 235, 0.7)", 
-                "VRS": "rgba(75, 192, 192, 0.7)"   
-            };
-
-            const chartDatasets = Object.keys(datasets).map(key => ({
-                label: key,
-                data: sortedLabels.map(date => datasets[key][date] || 0),
-                borderColor: typeColors[key] ? typeColors[key].replace('0.7', '1') : 'rgba(0,0,0,1)',
-                backgroundColor: typeColors[key] || 'rgba(0,0,0,0.5)',
-                tension: 0.1,
-                fill: false
-            }));
-
-            renderChart('chart-pacientes-ingresados-covid', {
-                type: 'line',
-                data: {
-                    labels: sortedLabels,
-                    datasets: chartDatasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { title: { display: true, text: 'Evolución Pacientes COVID, Gripe, VRS' } }, //
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Número de Pacientes' } } }
-                }
-            });
+            const datasets = {}; const labels = new Set();
+            filteredData.forEach(item => { const key = item.tipo; if (!datasets[key]) datasets[key] = {}; datasets[key][item.fecha] = (datasets[key][item.fecha] || 0) + item.pacientes; labels.add(item.fecha); });
+            const sortedLabels = Array.from(labels).sort((a, b) => { const [dayA, monthA] = a.split('/'); const [dayB, monthB] = b.split('/'); return new Date(`2025-${monthA}-${dayA}`) - new Date(`2025-${monthB}-${dayB}`); });
+            const typeColors = { "COVID": "rgba(255, 99, 132, 0.7)", "GRIPE": "rgba(54, 162, 235, 0.7)", "VRS": "rgba(75, 192, 192, 0.7)" };
+            const chartDatasets = Object.keys(datasets).map(key => ({ label: key, data: sortedLabels.map(date => datasets[key][date] || 0), borderColor: typeColors[key] ? typeColors[key].replace('0.7', '1') : 'rgba(0,0,0,1)', backgroundColor: typeColors[key] || 'rgba(0,0,0,0.5)', tension: 0.1, fill: false }));
+            renderChart('chart-pacientes-ingresados-covid', { type: 'line', data: { labels: sortedLabels, datasets: chartDatasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Evolución Pacientes COVID, Gripe, VRS' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Número de Pacientes' } } } } });
         }
 
         function updateDashboard(fullData, filters) {
-            let { entradasUrgencias, ocupacionCamas, pacientesCovidGripeVRS, pacientesIngresados } = fullData;
+            if (!fullData) {
+                console.warn("updateDashboard llamado sin datos (fullData es null/undefined)");
+                return;
+            }
+            let { entradasUrgencias = [], ocupacionCamas = [], pacientesCovidGripeVRS = [], pacientesIngresados = [] } = fullData;
 
             if (filters.date !== 'all') {
                 entradasUrgencias = entradasUrgencias.filter(d => d.fecha === filters.date);
-                // OcupacionCamas es a menudo un snapshot, el filtro de fecha podría no ser tan útil si el parser solo saca un día.
-                ocupacionCamas = ocupacionCamas.filter(d => d.fecha === filters.date || filters.date === "20/05"); // Adaptar según cómo se parsee
+                ocupacionCamas = ocupacionCamas.filter(d => d.fecha === filters.date || filters.date === "20/05");
                 pacientesCovidGripeVRS = pacientesCovidGripeVRS.filter(d => d.fecha === filters.date);
                 if (pacientesIngresados) pacientesIngresados = pacientesIngresados.filter(d => d.fecha === filters.date);
             }
             
             updateKPIs(fullData); 
 
-            document.getElementById('chart-entradas-urgencias').parentElement.style.display = 
-                (filters.indicator === 'all' || filters.indicator === 'entradasUrgencias') ? 'block' : 'none';
-            document.getElementById('chart-ocupacion-camas').parentElement.style.display =
-                (filters.indicator === 'all' || filters.indicator === 'ocupacionCamas') ? 'block' : 'none';
-            document.getElementById('chart-pacientes-ingresados-covid').parentElement.style.display =
-                (filters.indicator === 'all' || filters.indicator === 'pacientesCovidGripeVRS') ? 'block' : 'none';
+            document.getElementById('chart-entradas-urgencias').parentElement.style.display = (filters.indicator === 'all' || filters.indicator === 'entradasUrgencias') ? 'block' : 'none';
+            document.getElementById('chart-ocupacion-camas').parentElement.style.display = (filters.indicator === 'all' || filters.indicator === 'ocupacionCamas') ? 'block' : 'none';
+            document.getElementById('chart-pacientes-ingresados-covid').parentElement.style.display = (filters.indicator === 'all' || filters.indicator === 'pacientesCovidGripeVRS') ? 'block' : 'none';
 
-            if (filters.indicator === 'all' || filters.indicator === 'entradasUrgencias') {
-                displayEntradasUrgenciasChart(entradasUrgencias || fullData.entradasUrgencias, filters.area);
-            }
+            if (filters.indicator === 'all' || filters.indicator === 'entradasUrgencias') displayEntradasUrgenciasChart(entradasUrgencias, filters.area);
             if (filters.indicator === 'all' || filters.indicator === 'ocupacionCamas') {
-                const ocupacionDataToDisplay = (ocupacionCamas && ocupacionCamas.length > 0) ? ocupacionCamas : fullData.ocupacionCamas.filter(d => d.fecha === "20/05");
+                const ocupacionDataToDisplay = (ocupacionCamas && ocupacionCamas.length > 0 && filters.date !== 'all') ? ocupacionCamas : fullData.ocupacionCamas.filter(d => d.fecha === "20/05");
                 displayOcupacionCamasChart(ocupacionDataToDisplay, filters.area);
             }
-            if (filters.indicator === 'all' || filters.indicator === 'pacientesCovidGripeVRS') {
-                displayPacientesCovidChart(pacientesCovidGripeVRS || fullData.pacientesCovidGripeVRS, filters.area);
-            }
+            if (filters.indicator === 'all' || filters.indicator === 'pacientesCovidGripeVRS') displayPacientesCovidChart(pacientesCovidGripeVRS, filters.area);
         }
 
         // --- Contenido de app.js ---
@@ -849,83 +637,83 @@
             const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('pdf-file-input');
             const fileNameDisplay = document.getElementById('file-name');
-
-            let globalPDFData = null; 
+            let globalPDFData = null;
 
             dropZone.addEventListener('click', () => fileInput.click());
-            dropZone.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                dropZone.classList.add('dragover');
-            });
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('dragover');
-            });
-            dropZone.addEventListener('drop', (event) => {
-                event.preventDefault();
-                dropZone.classList.remove('dragover');
-                const files = event.dataTransfer.files;
-                if (files.length > 0) {
-                    handleFile(files[0]);
+            dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+            
+            dropZone.addEventListener('drop', (event) => { event.preventDefault(); dropZone.classList.remove('dragover'); if (event.dataTransfer.files.length > 0) handleFiles(event.dataTransfer.files); });
+            fileInput.addEventListener('change', (event) => { if (event.target.files.length > 0) handleFiles(event.target.files); });
+
+            async function handleFiles(files) {
+                if (files.length === 0) return;
+                fileNameDisplay.textContent = `${files.length} archivo(s) cargado(s): ${Array.from(files).map(f => f.name).join(', ')}`;
+                ['kpi-ocupacion-media', 'kpi-total-urgencias', 'kpi-pacientes-covid', 'kpi-presion-media'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = "Procesando...";
+                });
+
+                let allDataFromAllFiles = { entradasUrgencias: [], pacientesIngresados: [], ocupacionCamas: [], pacientesCovidGripeVRS: [] };
+
+                for (const file of files) {
+                    if (file.type !== "application/pdf") { alert(`El archivo ${file.name} no es un PDF y será omitido.`); continue; }
+                    const reader = new FileReader();
+                    const fileProcessPromise = new Promise((resolve, reject) => {
+                        reader.onload = async function(event) {
+                            const pdfData = new Uint8Array(event.target.result);
+                            try {
+                                const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+                                const numPages = pdf.numPages;
+                                const allPagesTextPromises = [];
+                                for (let i = 1; i <= numPages; i++) {
+                                    allPagesTextPromises.push(
+                                        pdf.getPage(i).then(page =>
+                                            page.getTextContent().then(textContent =>
+                                                textContent.items.map(item => item.str).join(' ') // Simple join
+                                            )
+                                        )
+                                    );
+                                }
+                                const allPagesText = await Promise.all(allPagesTextPromises);
+                                
+                                console.log(`--- TEXTO CRUDO PDF (${file.name}) ---`);
+                                console.log("PÁGINA 3 (Índice 2):", allPagesText[2] ? allPagesText[2].substring(0,1500) : "No disponible/Corta");
+                                console.log("PÁGINA 9 (Índice 8):", allPagesText[8] ? allPagesText[8].substring(0,1500) : "No disponible/Corta");
+                                console.log("PÁGINA 11 (Índice 10):", allPagesText[10] ? allPagesText[10].substring(0,1500) : "No disponible/Corta");
+                                console.log("PÁGINA 15 (Índice 14):", allPagesText[14] ? allPagesText[14].substring(0,1500) : "No disponible/Corta");
+
+                                const currentFileParsedData = await parsePDFData(allPagesText, file.name);
+                                
+                                // Acumular datos
+                                allDataFromAllFiles.entradasUrgencias.push(...(currentFileParsedData.entradasUrgencias || []));
+                                allDataFromAllFiles.pacientesIngresados.push(...(currentFileParsedData.pacientesIngresados || []));
+                                allDataFromAllFiles.ocupacionCamas.push(...(currentFileParsedData.ocupacionCamas || []));
+                                allDataFromAllFiles.pacientesCovidGripeVRS.push(...(currentFileParsedData.pacientesCovidGripeVRS || []));
+                                resolve();
+                            } catch (error) {
+                                console.error(`Error procesando PDF ${file.name}:`, error);
+                                alert(`Error al procesar PDF ${file.name}. Revisa la consola.`);
+                                reject(error);
+                            }
+                        };
+                        reader.onerror = (error) => { console.error(`Error leyendo archivo ${file.name}:`, error); alert(`Error al leer archivo ${file.name}.`); reject(error); }
+                        reader.readAsArrayBuffer(file);
+                    });
+                    try { await fileProcessPromise; } catch (e) { /* Error ya manejado */ }
                 }
-            });
-            fileInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                if (files.length > 0) {
-                    handleFile(files[0]);
+
+                globalPDFData = allDataFromAllFiles;
+                if (globalPDFData && (globalPDFData.entradasUrgencias.length > 0 || globalPDFData.ocupacionCamas.length > 0)) {
+                    console.log("Datos Estructurados Finales (múltiples archivos):", globalPDFData);
+                    populateFilters(globalPDFData);
+                    applyFiltersAndDisplay();
+                } else {
+                    fileNameDisplay.textContent += " - No se pudieron extraer datos válidos de los archivos.";
+                    updateKPIs({}); // Limpiar KPIs
+                    // Limpiar gráficos (opcional, o mostrar mensaje de "sin datos")
+                    ['chart-entradas-urgencias', 'chart-ocupacion-camas', 'chart-pacientes-ingresados-covid'].forEach(id => renderChart(id, {type:'line', data:{labels:[], datasets:[]}, options:{plugins:{title:{display:true, text:'Sin datos'}}}}));
                 }
-            });
-
-            async function handleFile(file) {
-                if (file.type !== "application/pdf") {
-                    alert("Por favor, sube un archivo PDF.");
-                    return;
-                }
-                fileNameDisplay.textContent = `Archivo cargado: ${file.name}`;
-                document.getElementById('kpi-ocupacion-media').textContent = "Procesando..."; // Feedback
-                document.getElementById('kpi-total-urgencias').textContent = "Procesando...";
-                document.getElementById('kpi-pacientes-covid').textContent = "Procesando...";
-
-
-                const reader = new FileReader();
-                reader.onload = async function(event) {
-                    const pdfData = new Uint8Array(event.target.result);
-                    try {
-                        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-                        const numPages = pdf.numPages;
-                        const allPagesTextPromises = [];
-
-                        for (let i = 1; i <= numPages; i++) {
-                            allPagesTextPromises.push(
-                                pdf.getPage(i).then(page => 
-                                    page.getTextContent().then(textContent =>
-                                        // Conservar saltos de línea aproximados concatenando items con espacio,
-                                        // y reconstruyendo líneas basado en la posición 'y' si es necesario
-                                        // (para una mejor reconstrucción de tabla, pero aquí simplificado)
-                                        textContent.items.map(item => item.str).join(' ')
-                                    )
-                                )
-                            );
-                        }
-                        const allPagesText = await Promise.all(allPagesTextPromises);
-                        
-                        console.log("Texto extraído del PDF (ejemplo página 3):", allPagesText[2] ? allPagesText[2].substring(0,1000) : "Página 3 no disponible");
-
-                        globalPDFData = await parsePDFData(allPagesText); 
-                        console.log("Datos Estructurados del PDF:", globalPDFData);
-                        
-                        populateFilters(globalPDFData);
-                        applyFiltersAndDisplay(); 
-
-                    } catch (error) {
-                        console.error("Error procesando el PDF:", error);
-                        alert("Error al procesar el PDF. Asegúrate de que sea un PDF válido y que la estructura sea la esperada. Revisa la consola para más detalles.");
-                        fileNameDisplay.textContent = "Error al cargar el archivo.";
-                         document.getElementById('kpi-ocupacion-media').textContent = "Error";
-                         document.getElementById('kpi-total-urgencias').textContent = "Error";
-                         document.getElementById('kpi-pacientes-covid').textContent = "Error";
-                    }
-                };
-                reader.readAsArrayBuffer(file);
             }
 
             document.getElementById('date-filter').addEventListener('change', applyFiltersAndDisplay);
@@ -933,24 +721,19 @@
             document.getElementById('indicator-filter').addEventListener('change', applyFiltersAndDisplay);
             
             function applyFiltersAndDisplay() {
-                if (!globalPDFData) {
-                    return;
-                }
-
-                const filters = {
-                    date: document.getElementById('date-filter').value,
-                    area: document.getElementById('area-filter').value,
-                    indicator: document.getElementById('indicator-filter').value,
-                };
+                if (!globalPDFData) { console.warn("applyFiltersAndDisplay llamado sin globalPDFData."); return; }
+                const filters = { date: document.getElementById('date-filter').value, area: document.getElementById('area-filter').value, indicator: document.getElementById('indicator-filter').value };
                 console.log("Aplicando filtros:", filters);
                 updateDashboard(globalPDFData, filters);
             }
             
-            // Inicializar con gráficos vacíos o mensaje
-            displayEntradasUrgenciasChart([], 'all');
-            displayOcupacionCamasChart([], 'all');
-            displayPacientesCovidChart([], 'all');
+            // Estado inicial de los gráficos
+            ['chart-entradas-urgencias', 'chart-ocupacion-camas', 'chart-pacientes-ingresados-covid'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) renderChart(id, {type:'line', data:{labels:[], datasets:[]}, options:{plugins:{title:{display:true, text:'Carga un PDF para ver los datos'}}}});
+            });
         });
     </script>
 </body>
 </html>
+
