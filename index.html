@@ -3,349 +3,765 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cargador y Procesador de CSV</title>
+    <title>Plataforma de Visualización de Constantes Vitales</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Gris claro de Tailwind */
-            color: #1f2937; /* Gris oscuro de Tailwind */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            color: #1f2937; /* Tailwind gray-800 */
             margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            display: flex;
+            min-height: 100vh;
         }
-        .container {
-            background-color: white;
-            padding: 2rem; /* 32px */
-            border-radius: 0.75rem; /* 12px */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 800px; /* Ancho máximo aumentado para tabla */
-            margin-top: 2rem;
+        /* Sidebar */
+        #sidebar {
+            width: 250px;
+            background-color: #1f2937; /* Tailwind gray-800 */
+            color: #f3f4f6; /* Tailwind gray-100 */
+            padding: 1.5rem;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(0);
+            z-index: 40;
+            position: fixed; /* Fixed position */
+            height: 100%; /* Full height */
+            overflow-y: auto; /* Scroll if content overflows */
         }
-        h1 {
-            font-size: 1.875rem; /* 30px */
+        #sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+        #sidebar h2 {
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #2563eb; /* Azul de Tailwind */
-            margin-bottom: 1.5rem; /* 24px */
+            margin-bottom: 2rem;
             text-align: center;
         }
-        label, p {
-            font-size: 1rem; /* 16px */
-            margin-bottom: 0.5rem;
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
         }
-        input[type="file"] {
+        #sidebar ul li a {
             display: block;
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db; /* Gris de Tailwind */
+            padding: 0.75rem 1rem;
+            color: #d1d5db; /* Tailwind gray-300 */
+            text-decoration: none;
             border-radius: 0.375rem; /* 6px */
-            width: 100%;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .button {
-            background-color: #3b82f6; /* Azul de Tailwind */
+        #sidebar ul li a:hover, #sidebar ul li a.active {
+            background-color: #374151; /* Tailwind gray-700 */
             color: white;
-            font-weight: 500;
-            padding: 0.75rem 1.5rem; /* 12px 24px */
-            border-radius: 0.5rem; /* 8px */
+        }
+        #sidebar ul li a i {
+            margin-right: 0.75rem;
+        }
+
+        /* Main Content Area */
+        #mainContent {
+            flex-grow: 1;
+            padding: 1.5rem;
+            margin-left: 250px; /* Same as sidebar width */
+            transition: margin-left 0.3s ease-in-out;
+        }
+        #mainContent.sidebar-collapsed {
+            margin-left: 0;
+        }
+
+        /* Hamburger Button */
+        #menuToggle {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            background-color: #3b82f6; /* Tailwind blue-500 */
+            color: white;
             border: none;
+            padding: 0.6rem 0.9rem;
+            border-radius: 0.375rem;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            z-index: 50;
+            font-size: 1.2rem;
+        }
+         #menuToggle:hover {
+            background-color: #2563eb; /* Tailwind blue-600 */
+        }
+
+        /* Modal for CSV Uploader */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
             width: 100%;
-            margin-top: 0.5rem;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Dim background */
+            align-items: center;
+            justify-content: center;
         }
-        .button:hover {
-            background-color: #2563eb; /* Azul más oscuro de Tailwind */
-        }
-        .message-box {
-            margin-top: 1.5rem; /* 24px */
-            padding: 1rem; /* 16px */
-            border-radius: 0.5rem; /* 8px */
-            border-width: 1px;
-            border-style: solid;
-        }
-        .message-box.success {
-            background-color: #d1fae5; /* Verde claro de Tailwind */
-            color: #065f46; /* Verde oscuro de Tailwind */
-            border-color: #6ee7b7; /* Verde de Tailwind */
-        }
-        .message-box.error {
-            background-color: #fee2e2; /* Rojo claro de Tailwind */
-            color: #991b1b; /* Rojo oscuro de Tailwind */
-            border-color: #fca5a5; /* Rojo de Tailwind */
-        }
-        .message-box.info {
-            background-color: #dbeafe; /* Azul claro de Tailwind */
-            color: #1e40af; /* Azul oscuro de Tailwind */
-            border-color: #93c5fd; /* Azul de Tailwind */
-        }
-        table {
-            width: 100%;
-            margin-top: 1.5rem;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #e5e7eb; /* Gris de Tailwind */
-            padding: 0.75rem; /* 12px */
-            text-align: left;
-            font-size: 0.875rem; /* 14px */
-        }
-        th {
-            background-color: #f9fafb; /* Gris muy claro de Tailwind */
-            font-weight: 600;
-        }
-        /* Estilo para el mensaje de "arrastra y suelta" */
-        #dropZone {
-            border: 2px dashed #9ca3af; /* Gris de Tailwind */
-            border-radius: 0.5rem;
+        .modal-content {
+            background-color: #fff;
+            margin: auto;
             padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 700px;
+            position: relative;
+        }
+        .modal-close {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover,
+        .modal-close:focus {
+            color: #333;
+        }
+
+        /* CSV Uploader specific styles inside modal */
+        #csvUploaderContainer h1 {
+            font-size: 1.5rem; /* 24px */
+            margin-bottom: 1rem;
+        }
+        #dropZone {
+            border: 2px dashed #9ca3af;
+            border-radius: 0.5rem;
+            padding: 1.5rem; /* Reduced padding */
             text-align: center;
             margin-bottom: 1rem;
             background-color: #f9fafb;
             transition: background-color 0.2s ease;
         }
         #dropZone.dragover {
-            background-color: #e0e7ff; /* Azul muy claro de Tailwind */
+            background-color: #e0e7ff;
             border-color: #3b82f6;
+        }
+        input[type="file"]#csvFileInput { /* Specific selector for file input */
+            display: block;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            width: 100%;
+        }
+        .message-box {
+            margin-top: 1rem; /* Reduced margin */
+            padding: 0.75rem; /* Reduced padding */
+            border-radius: 0.5rem;
+            border-width: 1px;
+            border-style: solid;
+            font-size: 0.875rem; /* Smaller font */
+        }
+        .message-box.success { background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+        .message-box.error { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .message-box.info { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+        
+        #csvDataTableContainer {
+            max-height: 300px; /* Limit height and make scrollable */
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; font-size: 0.875rem; }
+        th { background-color: #f9fafb; font-weight: 600; }
+
+        /* Dashboard specific styles */
+        .chart-container {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+        }
+        .filter-controls {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .filter-controls label {
+            font-weight: 500;
+        }
+        .filter-controls select, .filter-controls input[type="date"] {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            min-width: 150px; /* Minimum width for select/input */
+        }
+        .dashboard-title {
+             font-size: 1.75rem; /* 28px */
+             font-weight: 600;
+             margin-bottom: 1.5rem;
+             color: #111827; /* Tailwind gray-900 */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Cargador de Archivos CSV</h1>
+    <button id="menuToggle"><i class="fas fa-bars"></i></button>
 
-        <div id="dropZone">
-            <p>Arrastra y suelta un archivo CSV aquí, o haz clic en el botón de abajo para seleccionarlo.</p>
-        </div>
+    <aside id="sidebar">
+        <h2>Constantes SMS</h2>
+        <nav>
+            <ul>
+                <li><a href="#" id="showDashboardLink" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="#" id="openCsvUploader"><i class="fas fa-file-csv"></i> Cargar CSV</a></li>
+                </ul>
+        </nav>
+    </aside>
 
-        <input type="file" id="csvFileInput" accept=".csv">
-        
-        <div id="messageArea" class="message-box info" style="display: none;"></div>
-        
-        <div id="outputArea">
-            <table id="csvDataTable" style="display:none;">
-                <thead>
-                    <tr id="csvHeaderRow"></tr>
-                </thead>
-                <tbody id="csvBody"></tbody>
-            </table>
+    <main id="mainContent">
+        <section id="dashboardSection">
+            <h1 class="dashboard-title">Visualización de Constantes Vitales</h1>
+            
+            <div class="filter-controls">
+                <div>
+                    <label for="patientSelect">Paciente:</label>
+                    <select id="patientSelect" class="rounded">
+                        <option value="">Seleccionar Paciente...</option>
+                        </select>
+                </div>
+                <div>
+                    <label for="vitalSignSelect">Constante Vital:</label>
+                    <select id="vitalSignSelect" class="rounded">
+                        <option value="">Seleccionar Constante...</option>
+                        </select>
+                </div>
+                <div>
+                    <label for="timeRangeStart">Desde:</label>
+                    <input type="datetime-local" id="timeRangeStart" class="rounded">
+                </div>
+                <div>
+                    <label for="timeRangeEnd">Hasta:</label>
+                    <input type="datetime-local" id="timeRangeEnd" class="rounded">
+                </div>
+                <button id="applyFiltersButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-150">
+                    Aplicar Filtros
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="chart-container">
+                    <canvas id="vitalSignsChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="anotherChart"></canvas> </div>
+            </div>
+             <p class="mt-4 text-sm text-gray-600">Nota: La funcionalidad de graficación se conectará con los datos del CSV cargado en futuras iteraciones.</p>
+        </section>
+
+        <section id="csvUploaderSection" style="display: none;">
+            </section>
+    </main>
+
+    <div id="csvUploaderModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeCsvModal">&times;</span>
+            <div id="csvUploaderContainer">
+                <h1>Cargador de Archivos CSV</h1>
+                <div id="dropZone">
+                    <p>Arrastra y suelta un archivo CSV aquí, o haz clic abajo para seleccionar.</p>
+                </div>
+                <input type="file" id="csvFileInput" accept=".csv" class="w-full">
+                <div id="messageAreaModal" class="message-box info" style="display: none;"></div>
+                <div id="csvDataTableContainer">
+                    <table id="csvDataTable">
+                        <thead>
+                            <tr id="csvHeaderRow"></tr>
+                        </thead>
+                        <tbody id="csvBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Elementos del DOM
+        // --- Sidebar y Navegación ---
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const menuToggle = document.getElementById('menuToggle');
+        const showDashboardLink = document.getElementById('showDashboardLink');
+        const openCsvUploaderBtn = document.getElementById('openCsvUploader');
+        
+        const dashboardSection = document.getElementById('dashboardSection');
+        // const csvUploaderSection = document.getElementById('csvUploaderSection'); // No se usa si es modal
+
+        const csvUploaderModal = document.getElementById('csvUploaderModal');
+        const closeCsvModal = document.getElementById('closeCsvModal');
+
+        let isSidebarCollapsed = false;
+
+        menuToggle.addEventListener('click', () => {
+            isSidebarCollapsed = !isSidebarCollapsed;
+            sidebar.classList.toggle('collapsed', isSidebarCollapsed);
+            mainContent.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+            // Ajustar posición del botón de menú si el sidebar está visible/oculto
+             menuToggle.style.left = isSidebarCollapsed ? '1rem' : `calc(250px + 1rem)`;
+             // Redibujar gráficos al cambiar tamaño del contenedor
+            if (window.vitalSignsChartInstance) window.vitalSignsChartInstance.resize();
+            if (window.anotherChartInstance) window.anotherChartInstance.resize();
+        });
+        
+        // Inicialmente, el botón de menú se ajusta si el sidebar está abierto
+        menuToggle.style.left = `calc(250px + 1rem)`;
+
+
+        function setActiveLink(activeLink) {
+            document.querySelectorAll('#sidebar nav ul li a').forEach(link => link.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+
+        showDashboardLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            dashboardSection.style.display = 'block';
+            // csvUploaderSection.style.display = 'none'; // No se usa si es modal
+            csvUploaderModal.style.display = 'none';
+            setActiveLink(showDashboardLink);
+            if (window.vitalSignsChartInstance) window.vitalSignsChartInstance.resize();
+            if (window.anotherChartInstance) window.anotherChartInstance.resize();
+        });
+
+        openCsvUploaderBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            csvUploaderModal.style.display = 'flex';
+            // dashboardSection.style.display = 'none';
+            // csvUploaderSection.style.display = 'block'; // No se usa si es modal
+            // setActiveLink(openCsvUploaderBtn); // No es necesario activar link si es un modal
+        });
+
+        closeCsvModal.addEventListener('click', () => {
+            csvUploaderModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === csvUploaderModal) {
+                csvUploaderModal.style.display = 'none';
+            }
+        });
+
+        // --- Lógica del Cargador de CSV (adaptada para el modal) ---
         const csvFileInput = document.getElementById('csvFileInput');
-        const messageArea = document.getElementById('messageArea');
-        const outputArea = document.getElementById('outputArea');
+        const messageAreaModal = document.getElementById('messageAreaModal'); // Mensajes dentro del modal
         const csvDataTable = document.getElementById('csvDataTable');
         const csvHeaderRow = document.getElementById('csvHeaderRow');
         const csvBody = document.getElementById('csvBody');
         const dropZone = document.getElementById('dropZone');
+        const patientSelect = document.getElementById('patientSelect');
+        const vitalSignSelect = document.getElementById('vitalSignSelect');
+        const timeRangeStartInput = document.getElementById('timeRangeStart');
+        const timeRangeEndInput = document.getElementById('timeRangeEnd');
+        const applyFiltersButton = document.getElementById('applyFiltersButton');
 
-        // --- Funcionalidad de Arrastrar y Soltar ---
+        let allCsvData = []; // Para almacenar todos los datos del CSV
+        let patientColumnName = ''; // Para almacenar el nombre de la columna de paciente
+        let dateTimeColumnName = ''; // Para almacenar el nombre de la columna de fecha/hora
+
         dropZone.addEventListener('dragover', (event) => {
-            event.preventDefault(); // Prevenir el comportamiento por defecto (abrir el archivo)
+            event.preventDefault();
             dropZone.classList.add('dragover');
         });
-
         dropZone.addEventListener('dragleave', () => {
             dropZone.classList.remove('dragover');
         });
-
         dropZone.addEventListener('drop', (event) => {
             event.preventDefault();
             dropZone.classList.remove('dragover');
-            
             const files = event.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
                 if (file.name.endsWith('.csv')) {
-                    csvFileInput.files = files; // Asignar el archivo al input para reusar la lógica
+                    csvFileInput.files = files;
                     handleFile(file);
                 } else {
-                    showMessage('Por favor, suelta un archivo CSV.', 'error');
+                    showMessageInModal('Por favor, suelta un archivo CSV.', 'error');
                 }
             }
         });
-
-        // Activar el input de archivo al hacer clic en la zona de drop
-        dropZone.addEventListener('click', () => {
-            csvFileInput.click();
-        });
-        
-        // --- Manejo del Archivo Seleccionado ---
+        dropZone.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
+            if (file) handleFile(file);
         });
 
         function handleFile(file) {
             if (file.name.endsWith('.csv')) {
-                showMessage(`Archivo seleccionado: ${file.name}`, 'info');
+                showMessageInModal(`Archivo seleccionado: ${file.name}`, 'info');
                 const reader = new FileReader();
-                
                 reader.onload = function(e) {
                     const csvContent = e.target.result;
                     try {
-                        const parsedData = parseCSV(csvContent);
-                        if (parsedData.length > 0) {
-                            displayData(parsedData);
-                            showMessage('Archivo CSV procesado exitosamente.', 'success');
+                        const { data, headers } = parseCSV(csvContent); // parseCSV ahora devuelve datos y cabeceras
+                        allCsvData = data; // Guardar los datos globalmente
+                        if (data.length > 0) {
+                            displayTableData(data, headers); // Mostrar datos en la tabla del modal
+                            populateFilterOptions(data, headers); // Popular filtros del dashboard
+                            showMessageInModal('Archivo CSV procesado exitosamente. Puedes cerrar esta ventana y usar los filtros del dashboard.', 'success');
+                            // Por defecto, intentar graficar algo
+                            if (headers.length > 1 && patientColumnName && dateTimeColumnName) {
+                                const firstVitalSign = headers.find(h => h !== patientColumnName && h !== dateTimeColumnName && !isNaN(parseFloat(data[0][h])));
+                                if (firstVitalSign) {
+                                    vitalSignSelect.value = firstVitalSign;
+                                    updateCharts();
+                                }
+                            }
                         } else {
-                            showMessage('El archivo CSV está vacío o no contiene datos válidos después del procesamiento.', 'error');
-                            clearTable();
+                            showMessageInModal('El archivo CSV está vacío o no contiene datos válidos.', 'error');
+                            clearTableAndFilters();
                         }
                     } catch (error) {
                         console.error("Error al procesar CSV:", error);
-                        showMessage(`Error al procesar el archivo CSV: ${error.message}`, 'error');
-                        clearTable();
+                        showMessageInModal(`Error al procesar el archivo CSV: ${error.message}`, 'error');
+                        clearTableAndFilters();
                     }
                 };
-                
                 reader.onerror = function() {
-                    showMessage('Error al leer el archivo.', 'error');
-                    clearTable();
+                    showMessageInModal('Error al leer el archivo.', 'error');
+                    clearTableAndFilters();
                 };
-                
-                reader.readAsText(file); // Lee el archivo como texto
+                reader.readAsText(file);
             } else {
-                showMessage('Por favor, selecciona un archivo con formato .csv', 'error');
-                clearTable();
-                csvFileInput.value = ''; // Limpiar el input si el archivo no es CSV
+                showMessageInModal('Por favor, selecciona un archivo con formato .csv', 'error');
+                clearTableAndFilters();
+                csvFileInput.value = '';
             }
         }
 
-        /**
-         * Muestra un mensaje en el área de mensajes.
-         * @param {string} text - El texto del mensaje.
-         * @param {'info'|'success'|'error'} type - El tipo de mensaje.
-         */
-        function showMessage(text, type = 'info') {
-            messageArea.textContent = text;
-            messageArea.className = `message-box ${type}`; // Restablece clases y añade la nueva
-            messageArea.style.display = 'block';
+        function showMessageInModal(text, type = 'info') {
+            messageAreaModal.textContent = text;
+            messageAreaModal.className = `message-box ${type}`;
+            messageAreaModal.style.display = 'block';
         }
 
-        /**
-         * Limpia la tabla de datos.
-         */
-        function clearTable() {
+        function clearTableAndFilters() {
             csvHeaderRow.innerHTML = '';
             csvBody.innerHTML = '';
             csvDataTable.style.display = 'none';
+            allCsvData = [];
+            patientSelect.innerHTML = '<option value="">Seleccionar Paciente...</option>';
+            vitalSignSelect.innerHTML = '<option value="">Seleccionar Constante...</option>';
+            if (window.vitalSignsChartInstance) window.vitalSignsChartInstance.destroy();
+            if (window.anotherChartInstance) window.anotherChartInstance.destroy();
         }
-
-        /**
-         * Parsea el contenido de un archivo CSV.
-         * Esta es una función BÁSICA. Necesitarás adaptarla si tu CSV tiene comillas,
-         * comas dentro de los campos, o formatos de fecha/número complejos.
-         * @param {string} csvText - El contenido del archivo CSV como texto.
-         * @returns {Array<Object>} Un array de objetos, donde cada objeto representa una fila.
-         * La primera fila del CSV se asume que son las cabeceras.
-         */
+        
         function parseCSV(csvText) {
-            const lines = csvText.trim().split(/\r\n|\n/); // Divide por nueva línea (CRLF o LF)
-            
-            if (lines.length === 0) {
-                return [];
-            }
+            const lines = csvText.trim().split(/\r\n|\n/);
+            if (lines.length === 0) return { data: [], headers: [] };
 
-            // Asumir que la primera línea son las cabeceras
             const headers = lines[0].split(',').map(header => header.trim());
             const data = [];
 
+            // Detectar columnas de paciente y fecha/hora (esto es una suposición, idealmente el usuario lo confirmaría)
+            patientColumnName = headers.find(h => h.toLowerCase().includes('paciente') || h.toLowerCase().includes('nhc')) || headers[0];
+            dateTimeColumnName = headers.find(h => h.toLowerCase().includes('fecha') || h.toLowerCase().includes('hora') || h.toLowerCase().includes('timestamp')) || headers[1];
+
+
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
-                if (line === "") continue; // Saltar líneas vacías
-
+                if (line === "") continue;
                 const values = line.split(',').map(value => value.trim());
-                
-                // Validación básica: número de columnas coincide con cabeceras
                 if (values.length !== headers.length) {
-                    console.warn(`Línea ${i+1} ignorada: número de columnas (${values.length}) no coincide con cabeceras (${headers.length}). Contenido: "${line}"`);
-                    // Puedes lanzar un error aquí si prefieres ser más estricto:
-                    // throw new Error(`Línea ${i+1}: Inconsistencia en el número de columnas.`);
-                    continue; 
+                    console.warn(`Línea ${i+1} ignorada: número de columnas no coincide. Esperadas: ${headers.length}, Obtenidas: ${values.length}. Contenido: "${line}"`);
+                    continue;
                 }
-
                 const rowObject = {};
                 for (let j = 0; j < headers.length; j++) {
                     let value = values[j];
-                    
-                    // Intenta convertir a número si es posible
-                    if (!isNaN(value) && value.trim() !== "") {
+                    if (headers[j] !== patientColumnName && !isNaN(value) && value.trim() !== "") { // No convertir a número el ID de paciente
                         value = Number(value);
                     }
-                    // Aquí podrías añadir lógica para parsear fechas si un campo es una fecha.
-                    // Ejemplo (muy básico, necesitarías saber qué columna es la fecha):
-                    // if (headers[j].toLowerCase().includes('fecha') || headers[j].toLowerCase().includes('date')) {
-                    //    const parsedDate = new Date(value);
-                    //    if (!isNaN(parsedDate.getTime())) {
-                    //        value = parsedDate; // O formatearla como string: parsedDate.toLocaleDateString();
-                    //    } else {
-                    //        console.warn(`Fecha inválida en línea ${i+1}, columna '${headers[j]}': ${values[j]}`);
-                    //        // Podrías decidir si mantener el string original o marcarlo como inválido
-                    //    }
-                    // }
+                    // Parseo de fechas específico para la columna de fecha/hora
+                    if (headers[j] === dateTimeColumnName) {
+                        const parsedDate = new Date(value); // Intentar parseo directo
+                        if (!isNaN(parsedDate.getTime())) {
+                            value = parsedDate;
+                        } else {
+                            // Intentar formatos comunes si el parseo directo falla (ej: DD/MM/YYYY HH:MM:SS)
+                            const parts = value.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[\sT]?(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+                            if (parts) {
+                                // Asumiendo DD/MM/YYYY o MM/DD/YYYY - se necesita heurística o configuración
+                                // Por simplicidad, si hay / y el primer grupo es > 12, es probable DD/MM
+                                let day, month, year, hour = 0, minute = 0, second = 0;
+                                if (value.includes('/')) { // DD/MM/YYYY o MM/DD/YYYY
+                                   if (parseInt(parts[1]) > 12) { // Probable DD/MM/YYYY
+                                       day = parseInt(parts[1]); month = parseInt(parts[2]) -1;
+                                   } else { // Probable MM/DD/YYYY o ambiguo, asumimos MM/DD por ahora
+                                       month = parseInt(parts[1]) -1; day = parseInt(parts[2]);
+                                   }
+                                } else { // YYYY-MM-DD
+                                    year = parseInt(parts[1]); month = parseInt(parts[2]) -1; day = parseInt(parts[3]);
+                                }
+                                if (parts[3].length === 4 && !year) year = parseInt(parts[3]);
+                                else if (parts[3].length === 2 && !year) year = parseInt(parts[3]) + 2000;
+
+                                if (parts[4]) hour = parseInt(parts[4]);
+                                if (parts[5]) minute = parseInt(parts[5]);
+                                if (parts[6]) second = parseInt(parts[6]);
+                                
+                                if (year && month >=0 && day) {
+                                   const attemptDate = new Date(year, month, day, hour, minute, second);
+                                   if(!isNaN(attemptDate.getTime())) value = attemptDate;
+                                   else console.warn(`Formato de fecha no reconocido en línea ${i+1}: ${values[j]}`);
+                                } else {
+                                   console.warn(`Formato de fecha no reconocido en línea ${i+1}: ${values[j]}`);
+                                }
+                            } else {
+                                console.warn(`Formato de fecha no reconocido en línea ${i+1}: ${values[j]}`);
+                            }
+                        }
+                    }
                     rowObject[headers[j]] = value;
                 }
                 data.push(rowObject);
             }
-            return data;
+            return { data, headers };
         }
 
-        /**
-         * Muestra los datos parseados en una tabla HTML.
-         * @param {Array<Object>} data - Un array de objetos parseados del CSV.
-         */
-        function displayData(data) {
-            clearTable(); // Limpiar tabla anterior
-
+        function displayTableData(data, headers) { // Acepta cabeceras también
+            csvHeaderRow.innerHTML = '';
+            csvBody.innerHTML = '';
             if (data.length === 0) {
                 csvDataTable.style.display = 'none';
                 return;
             }
-
-            const headers = Object.keys(data[0]);
-
-            // Crear cabeceras de la tabla
             headers.forEach(headerText => {
                 const th = document.createElement('th');
                 th.textContent = headerText;
                 csvHeaderRow.appendChild(th);
             });
-
-            // Crear filas de datos
             data.forEach(rowObject => {
                 const tr = document.createElement('tr');
                 headers.forEach(header => {
                     const td = document.createElement('td');
                     let cellValue = rowObject[header];
-                    // Formatear fechas si son objetos Date (ajusta según tu parseo)
                     if (cellValue instanceof Date) {
-                        td.textContent = cellValue.toLocaleString(); // O .toLocaleDateString(), .toISOString(), etc.
-                    } else if (cellValue === null || cellValue === undefined) {
-                        td.textContent = ''; // Mostrar celdas vacías para null/undefined
+                        td.textContent = cellValue.toLocaleString('es-ES', { dateStyle:'short', timeStyle:'medium'});
                     } else {
-                        td.textContent = cellValue;
+                        td.textContent = cellValue === null || cellValue === undefined ? '' : cellValue;
                     }
                     tr.appendChild(td);
                 });
                 csvBody.appendChild(tr);
             });
-
-            csvDataTable.style.display = 'table'; // Mostrar la tabla
+            csvDataTable.style.display = 'table';
         }
 
-        // Mensaje inicial
-        showMessage('Por favor, selecciona un archivo CSV o arrástralo a la zona de arriba.', 'info');
+        function populateFilterOptions(data, headers) {
+            // Popular selector de pacientes
+            patientSelect.innerHTML = '<option value="">Todos los Pacientes</option>';
+            const uniquePatients = [...new Set(data.map(row => row[patientColumnName]))].sort();
+            uniquePatients.forEach(patientId => {
+                if (patientId === undefined || patientId === null) return;
+                const option = document.createElement('option');
+                option.value = patientId;
+                option.textContent = patientId;
+                patientSelect.appendChild(option);
+            });
+
+            // Popular selector de constantes vitales (solo numéricas, excluyendo paciente y fecha)
+            vitalSignSelect.innerHTML = '<option value="">Seleccionar Constante...</option>';
+            headers.forEach(header => {
+                if (header !== patientColumnName && header !== dateTimeColumnName) {
+                    // Verificar si la columna es mayormente numérica
+                    const isNumericColumn = data.slice(0, Math.min(5, data.length)) // Muestra de 5 filas
+                                             .every(row => typeof row[header] === 'number' || (typeof row[header] === 'string' && !isNaN(parseFloat(row[header]))));
+                    if (isNumericColumn) {
+                        const option = document.createElement('option');
+                        option.value = header;
+                        option.textContent = header;
+                        vitalSignSelect.appendChild(option);
+                    }
+                }
+            });
+
+            // Establecer rangos de fecha/hora por defecto
+            if (data.length > 0 && dateTimeColumnName) {
+                const dates = data.map(row => row[dateTimeColumnName]).filter(d => d instanceof Date);
+                if (dates.length > 0) {
+                    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+                    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+                    timeRangeStartInput.value = minDate.toISOString().slice(0, 16);
+                    timeRangeEndInput.value = maxDate.toISOString().slice(0, 16);
+                }
+            }
+        }
+        
+        applyFiltersButton.addEventListener('click', updateCharts);
+
+
+        // --- Lógica de Gráficos ---
+        const ctxVitalSigns = document.getElementById('vitalSignsChart').getContext('2d');
+        const ctxAnother = document.getElementById('anotherChart').getContext('2d');
+        window.vitalSignsChartInstance = null; // Para poder destruir y recrear
+        window.anotherChartInstance = null;
+
+        function updateCharts() {
+            if (allCsvData.length === 0) {
+                showMessage('Carga un archivo CSV primero para ver los gráficos.', 'info'); // Mensaje en dashboard
+                return;
+            }
+
+            const selectedPatient = patientSelect.value;
+            const selectedVitalSign = vitalSignSelect.value;
+            const startTime = timeRangeStartInput.value ? new Date(timeRangeStartInput.value) : null;
+            const endTime = timeRangeEndInput.value ? new Date(timeRangeEndInput.value) : null;
+
+            if (!selectedVitalSign) {
+                showMessage('Por favor, selecciona una constante vital para graficar.', 'error'); // Mensaje en dashboard
+                return;
+            }
+             if (!dateTimeColumnName) {
+                showMessage('No se pudo identificar una columna de fecha/hora en el CSV.', 'error');
+                return;
+            }
+
+
+            let filteredData = allCsvData;
+            if (selectedPatient) {
+                filteredData = filteredData.filter(row => String(row[patientColumnName]) === String(selectedPatient));
+            }
+            if (startTime) {
+                filteredData = filteredData.filter(row => row[dateTimeColumnName] instanceof Date && row[dateTimeColumnName] >= startTime);
+            }
+            if (endTime) {
+                filteredData = filteredData.filter(row => row[dateTimeColumnName] instanceof Date && row[dateTimeColumnName] <= endTime);
+            }
+            
+            // Ordenar por fecha/hora
+            filteredData.sort((a, b) => {
+                const dateA = a[dateTimeColumnName];
+                const dateB = b[dateTimeColumnName];
+                if (dateA instanceof Date && dateB instanceof Date) {
+                    return dateA.getTime() - dateB.getTime();
+                }
+                return 0;
+            });
+
+
+            if (filteredData.length === 0) {
+                showMessage(`No hay datos para '${selectedVitalSign}' con los filtros aplicados.`, 'info');
+                 if (window.vitalSignsChartInstance) window.vitalSignsChartInstance.destroy();
+                return;
+            }
+            
+            const labels = filteredData.map(row => {
+                const dateVal = row[dateTimeColumnName];
+                return dateVal instanceof Date ? dateVal.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : String(dateVal);
+            });
+            const dataPoints = filteredData.map(row => row[selectedVitalSign]);
+
+            if (window.vitalSignsChartInstance) {
+                window.vitalSignsChartInstance.destroy();
+            }
+            window.vitalSignsChartInstance = new Chart(ctxVitalSigns, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: selectedVitalSign + (selectedPatient ? ` (${selectedPatient})` : ''),
+                        data: dataPoints,
+                        borderColor: 'rgb(59, 130, 246)', // Tailwind blue-500
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false, // No siempre empezar en cero para constantes vitales
+                            title: { display: true, text: selectedVitalSign }
+                        },
+                        x: {
+                            title: { display: true, text: 'Fecha y Hora' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+             showMessage(`Mostrando gráfico para '${selectedVitalSign}'.`, 'success');
+        }
+
+
+        // Placeholder para el segundo gráfico (ej. un gráfico de barras)
+        if (window.anotherChartInstance) window.anotherChartInstance.destroy();
+        window.anotherChartInstance = new Chart(ctxAnother, {
+            type: 'bar',
+            data: {
+                labels: ['Dato A', 'Dato B', 'Dato C', 'Dato D'],
+                datasets: [{
+                    label: 'Otro Indicador (Ejemplo)',
+                    data: [12, 19, 3, 5],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.6)', // Tailwind red-500
+                        'rgba(245, 158, 11, 0.6)', // Tailwind amber-500
+                        'rgba(16, 185, 129, 0.6)', // Tailwind emerald-500
+                        'rgba(99, 102, 241, 0.6)', // Tailwind indigo-500
+                    ],
+                    borderColor: [
+                        'rgb(239, 68, 68)',
+                        'rgb(245, 158, 11)',
+                        'rgb(16, 185, 129)',
+                        'rgb(99, 102, 241)',
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+        
+        // Función para mostrar mensajes en el área principal del dashboard
+        function showMessage(text, type = 'info') {
+            // Podrías tener un área de mensajes dedicada en el dashboard,
+            // por ahora usaré un console.log y un alert simple (que no es ideal)
+            console.log(`Dashboard Message (${type}): ${text}`);
+            // Para una mejor UI, crea un div de mensajes en el dashboardSection
+            // y actualízalo aquí, similar a messageAreaModal.
+            // Ejemplo rápido (no estilizado):
+            let dashboardMessageArea = document.getElementById('dashboardMessageArea');
+            if (!dashboardMessageArea) {
+                dashboardMessageArea = document.createElement('div');
+                dashboardMessageArea.id = 'dashboardMessageArea';
+                dashboardMessageArea.className = 'message-box mt-4'; // Reutilizar estilos
+                dashboardSection.insertBefore(dashboardMessageArea, dashboardSection.firstChild);
+            }
+            dashboardMessageArea.textContent = text;
+            dashboardMessageArea.className = `message-box ${type} mt-4`;
+            dashboardMessageArea.style.display = 'block';
+
+             setTimeout(() => {
+                if(dashboardMessageArea) dashboardMessageArea.style.display = 'none';
+            }, 5000); // Ocultar mensaje después de 5 segundos
+        }
+
+
+        // Inicializar la vista
+        setActiveLink(showDashboardLink);
+        dashboardSection.style.display = 'block';
+        showMessage('Bienvenido. Carga un archivo CSV desde el menú para visualizar los datos.', 'info');
 
     </script>
 </body>
