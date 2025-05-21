@@ -350,7 +350,8 @@
                 <div id="dropZone">
                     <p><i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i><br>Arrastra y suelta un archivo CSV aquí, o haz clic para seleccionar.</p>
                 </div>
-                <input type="file" id="csvFileInput" accept=".csv" class="hidden"> <div id="messageAreaModal" class="message-box info" style="display: none;"></div>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden"> 
+                <div id="messageAreaModal" class="message-box info" style="display: none;"></div>
                 
                 <div id="csvDataTableContainerModal">
                     <table id="csvDataTableModal">
@@ -367,8 +368,8 @@
     <script>
         // --- Datos Globales y Estado ---
         let patientData = [ // Datos iniciales de ejemplo
-            { fecha: "2024-05-20", turno: "M", temp: 36.5, tas: 120, tad: 80, fc: 70, fr: 16, satO2: 98 },
-            { fecha: "2024-05-20", turno: "T", temp: 37.0, tas: 122, tad: 81, fc: 75, fr: 18, satO2: 97 },
+            { fecha: "2024-05-20", turno: "M", temp: 36.5, tas: 120, tad: 80, fc: 70, fr: 16, sato2: 98 },
+            { fecha: "2024-05-20", turno: "T", temp: 37.0, tas: 122, tad: 81, fc: 75, fr: 18, sato2: 97 },
             { fecha: "2024-05-21", turno: "N", temp: 36.8, tas: 118, tad: 78, fc: 68, fr: 15 },
         ];
         let vitalSignsChart;
@@ -383,7 +384,7 @@
         const inputTAD = document.getElementById('inputTAD');
         const inputFC = document.getElementById('inputFC');
         const inputFR = document.getElementById('inputFR');
-        const inputSatO2 = document.getElementById('inputSatO2');
+        const inputSatO2 = document.getElementById('inputSatO2'); // Correcto
         const addDataButton = document.getElementById('addDataButton');
         const dataTableBody = document.querySelector('#dataTable tbody');
         const applyScaleButton = document.getElementById('applyScaleConfig');
@@ -471,21 +472,29 @@
 
         function processAndDisplayCsvData(csvContent, sourceName) {
             try {
-                const { data, headers } = parseGenericCsv(csvContent); // Usar un parser genérico primero
-                if (data.length === 0) return showMessageInModal(`CSV de '${sourceName}' vacío o sin datos.`, 'error');
+                const { data, headers } = parseGenericCsv(csvContent); 
+                if (data.length === 0) {
+                    showMessageInModal(`CSV de '${sourceName}' vacío o sin datos válidos.`, 'error');
+                    return;
+                }
                 
-                displayCsvDataInModal(data, headers); // Mostrar datos parseados en el modal
-                transformAndSetGlobalPatientData(data, headers); // Transformar y actualizar patientData global
+                displayCsvDataInModal(data, headers); 
+                transformAndSetGlobalPatientData(data, headers); 
 
-                showMessageInModal(`Datos de '${sourceName}' procesados. Puedes cerrar esta ventana.`, 'success');
-                createChart(patientData); // Actualizar el gráfico principal
-                renderDataTable();      // Actualizar la tabla principal
+                if (patientData.length > 0) { // Verificar si la transformación produjo datos válidos
+                    showMessageInModal(`Datos de '${sourceName}' procesados. Puedes cerrar esta ventana.`, 'success');
+                    createChart(patientData); 
+                    renderDataTable();      
+                } else {
+                     showMessageInModal(`No se pudieron transformar datos válidos del CSV de '${sourceName}'. Verifica el formato y las cabeceras.`, 'error');
+                }
             } catch (error) {
+                console.error("Error en processAndDisplayCsvData:", error)
                 showMessageInModal(`Error procesando CSV de '${sourceName}': ${error.message}`, 'error');
             }
         }
         
-        function parseGenericCsv(csvText) { // Parser genérico de CSV
+        function parseGenericCsv(csvText) { 
             const lines = csvText.trim().split(/\r\n|\n/);
             if (lines.length === 0) return { data: [], headers: [] };
             const headers = lines[0].split(',').map(h => h.trim());
@@ -497,68 +506,89 @@
                         return obj;
                     }, {});
                 }
-                return null; // Ignorar líneas con número incorrecto de columnas
+                console.warn("Línea CSV ignorada por número incorrecto de columnas:", line);
+                return null; 
             }).filter(row => row !== null);
             return { data, headers };
         }
 
         function transformAndSetGlobalPatientData(parsedCsvData, csvHeaders) {
-            // Mapeo de cabeceras CSV a las claves esperadas por patientData
-            // Es importante que el CSV tenga cabeceras que se puedan mapear a estas claves.
             const keyMap = {
                 fecha: ['fecha', 'date', 'timestamp'],
-                turno: ['turno', 'shift'],
-                temp: ['temp', 'temperatura', 'temperature'],
-                tas: ['tas', 'sistolica', 'systolic', 'ta sistolica'],
-                tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica'],
-                fc: ['fc', 'frecuencia cardiaca', 'hr', 'heart rate'],
-                fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate'],
-                sato2: ['sato2', 'saturacion', 'saturation', 'spo2'] // 'satO2' es la clave interna
+                hora: ['hora', 'time'], // Para extraer la hora y derivar el turno
+                temp: ['temp', 'temperatura', 'temperature', 't', 't (°c)'],
+                tas: ['tas', 'sistolica', 'systolic', 'ta sistolica', 'tas (mmhg)'],
+                tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica', 'tad (mmhg)'],
+                fc: ['fc', 'frecuencia cardiaca', 'hr', 'heart rate', 'fc (lpm)'],
+                fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate', 'fr (rpm)'],
+                sato2: ['sato2', 'saturacion', 'saturation', 'spo2', 'sato2 (%)']
             };
 
             const findHeader = (possibleNames) => csvHeaders.find(h => possibleNames.includes(h.toLowerCase()));
 
             const transformed = parsedCsvData.map(row => {
                 const newEntry = {};
-                for (const internalKey in keyMap) {
+                let fechaStr, horaStr;
+
+                // Mapear Fecha
+                const fechaHeader = findHeader(keyMap.fecha);
+                if (fechaHeader && row[fechaHeader] !== undefined && row[fechaHeader] !== '') {
+                    try {
+                        // Intentar normalizar la fecha a YYYY-MM-DD
+                        const d = new Date(row[fechaHeader].replace(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/, '$3-$2-$1')); // Intenta convertir DD/MM/YYYY a YYYY-MM-DD
+                        if (isNaN(d.getTime())) { // Si falla, intenta parseo directo
+                             const directDate = new Date(row[fechaHeader]);
+                             if(isNaN(directDate.getTime())) throw new Error('Invalid date');
+                             fechaStr = directDate.toISOString().split('T')[0];
+                        } else {
+                            fechaStr = d.toISOString().split('T')[0];
+                        }
+                        newEntry.fecha = fechaStr;
+                    } catch { 
+                        console.warn(`Formato de fecha inválido para '${row[fechaHeader]}', se ignora la fila.`); return null; 
+                    }
+                } else {
+                    console.warn("Fila ignorada por falta de cabecera/valor de fecha:", row); return null;
+                }
+
+                // Mapear Hora y derivar Turno
+                const horaHeader = findHeader(keyMap.hora);
+                if (horaHeader && row[horaHeader] !== undefined && row[horaHeader] !== '') {
+                    horaStr = row[horaHeader];
+                    const hourMatch = horaStr.match(/^(\d{1,2})/); // Extraer la hora
+                    if (hourMatch) {
+                        const hour = parseInt(hourMatch[1], 10);
+                        if (hour >= 7 && hour < 15) newEntry.turno = 'M';      // Mañana: 7:00 - 14:59
+                        else if (hour >= 15 && hour < 22) newEntry.turno = 'T'; // Tarde: 15:00 - 21:59
+                        else newEntry.turno = 'N';                              // Noche: 22:00 - 06:59
+                    } else {
+                        console.warn(`Formato de hora inválido '${horaStr}', no se pudo derivar turno. Fila ignorada.`); return null;
+                    }
+                } else {
+                    console.warn("Fila ignorada por falta de cabecera/valor de hora para derivar turno:", row); return null;
+                }
+                
+                // Mapear otras constantes
+                ['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].forEach(internalKey => {
                     const header = findHeader(keyMap[internalKey]);
                     if (header && row[header] !== undefined && row[header] !== '') {
-                        let value = row[header];
-                        if (internalKey === 'fecha') {
-                            try {
-                                const d = new Date(value);
-                                if (isNaN(d.getTime())) throw new Error();
-                                value = d.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-                            } catch { 
-                                console.warn(`Formato de fecha inválido para '${value}', se ignora la fila.`); return null; 
-                            }
-                        } else if (internalKey === 'turno') {
-                            value = String(value).toUpperCase().charAt(0);
-                            if (!['M', 'T', 'N'].includes(value)) {
-                                console.warn(`Turno inválido '${row[header]}', se ignora la fila.`); return null;
-                            }
-                        } else if (['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].includes(internalKey)) {
-                            value = parseFloat(String(value).replace(',', '.')); // Permitir coma decimal
-                            if (isNaN(value)) value = undefined; // Si no es número, dejar undefined
-                        }
-                        newEntry[internalKey] = value;
+                        let value = parseFloat(String(row[header]).replace(',', '.'));
+                        if (!isNaN(value)) newEntry[internalKey] = value;
+                        else newEntry[internalKey] = undefined; // Si no es número válido, dejar undefined
                     }
-                }
-                // Asegurar que fecha y turno existan
-                if (!newEntry.fecha || !newEntry.turno) {
-                     console.warn("Fila ignorada por falta de fecha o turno:", row); return null;
-                }
+                });
                 return newEntry;
-            }).filter(entry => entry !== null);
+            }).filter(entry => entry !== null && entry.fecha && entry.turno); // Asegurar que fecha y turno existan después de todo
 
-            transformed.sort((a, b) => { // Ordenar
+            transformed.sort((a, b) => {
                 const dateA = new Date(a.fecha).getTime();
                 const dateB = new Date(b.fecha).getTime();
                 if (dateA !== dateB) return dateA - dateB;
                 const turnoOrder = { 'M': 1, 'T': 2, 'N': 3 };
                 return turnoOrder[a.turno] - turnoOrder[b.turno];
             });
-            patientData = transformed; // Actualizar la variable global
+            patientData = transformed; 
+            console.log("PatientData global actualizado:", patientData);
         }
 
 
@@ -567,7 +597,7 @@
             csvBodyModal.innerHTML = '';
             if (data.length === 0) return;
             headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; csvHeaderRowModal.appendChild(th); });
-            data.slice(0, 30).forEach(row => { // Mostrar solo primeras 30 filas en modal
+            data.slice(0, 30).forEach(row => { 
                 const tr = csvBodyModal.insertRow();
                 headers.forEach(header => tr.insertCell().textContent = row[header] !== undefined ? row[header] : '-');
             });
@@ -578,20 +608,20 @@
             messageAreaModal.style.display = 'block';
         }
 
-        // --- Lógica de Gráfico Principal y Tabla de Datos (Dashboard) ---
-        // (Funciones formatXAxisLabels, customAnnotationsPlugin, createChart, renderDataTable, addDataButton listener)
-        // Copiadas y adaptadas de custom_vital_signs_chart_v1
-
         function formatXAxisLabels(data) {
             return data.map(d => {
                 try {
-                    const date = new Date(d.fecha);
-                    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-                    const localDate = new Date(date.getTime() + userTimezoneOffset); //Ajustar a zona horaria local para el día correcto
-                    const day = String(localDate.getDate()).padStart(2, '0');
-                    const month = String(localDate.getMonth() + 1).padStart(2, '0');
-                    return `${day}/${month} ${d.turno}`;
-                } catch (e) { return "Error Fecha"; }
+                    // Asumimos que d.fecha ya es YYYY-MM-DD
+                    const dateParts = d.fecha.split('-');
+                    const year = parseInt(dateParts[0]);
+                    const month = parseInt(dateParts[1]) -1; // Meses en JS son 0-indexados
+                    const day = parseInt(dateParts[2]);
+                    
+                    const localDate = new Date(year, month, day); 
+                    const displayDay = String(localDate.getDate()).padStart(2, '0');
+                    const displayMonth = String(localDate.getMonth() + 1).padStart(2, '0');
+                    return `${displayDay}/${displayMonth} ${d.turno}`;
+                } catch (e) { console.error("Error formateando etiqueta X:", d, e); return "Error Fecha"; }
             });
         }
         
@@ -603,41 +633,37 @@
                 ctx.font = 'bold 10px Inter';
                 ctx.textAlign = 'center';
 
-                const satO2DatasetIndex = data.datasets.findIndex(ds => ds.label === 'SatO₂');
-
-                patientData.forEach((pData, index) => { // Iterar sobre patientData original para tener todos los valores
-                    const meta = chart.getDatasetMeta(0); // Usar meta del primer dataset visible para posiciones X
-                    if (!meta.data[index]) return; // Si no hay punto graficado para este índice, saltar
+                patientData.forEach((pData, index) => { 
+                    const meta = chart.getDatasetMeta(0); 
+                    if (!meta.data[index]) return; 
 
                     const xPos = meta.data[index].x;
                     
-                    // Dibujar SatO2
                     if (pData.sato2 !== undefined && pData.sato2 !== null) {
-                        ctx.fillStyle = '#1f2937'; // Tailwind gray-800
-                        // Intentar posicionar SatO2 encima del punto más alto del turno (ej. TAS o Temp)
-                        let yAnchor = top + 20; // Default
-                        const tempPoint = chart.getDatasetMeta(data.datasets.findIndex(ds => ds.label === 'Temperatura'))?.data[index];
-                        const tasValue = pData.tas; // Necesitamos el valor, no el punto de la barra flotante
+                        ctx.fillStyle = '#1f2937'; 
+                        let yAnchor = top + 20; 
+                        const tempMeta = chart.getDatasetMeta(data.datasets.findIndex(ds => ds.label === 'Temperatura'));
+                        const tempPoint = tempMeta?.data[index];
                         
-                        if (tempPoint && tempPoint.active) yAnchor = tempPoint.y - 15; // Si hay punto de temp
-                        else if (tasValue) { // Si hay TAS, intentar colocarlo relativo a la escala de TA
+                        if (tempPoint && tempPoint.active !== false && tempPoint.y) { // Check if point exists and has y
+                             yAnchor = tempPoint.y - 15;
+                        } else if (pData.tas) { 
                             const bpScale = chart.scales.yBP;
-                            if (bpScale) yAnchor = bpScale.getPixelForValue(tasValue) - 15;
+                            if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
                         }
 
-                        if (xPos >= left && xPos <= right && yAnchor > top - 5 && yAnchor < bottom + 5) { // Dentro del área visible
-                           ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top - 5, yAnchor)); // No dibujar demasiado arriba
+                        if (xPos >= left && xPos <= right && yAnchor > top - 10 && yAnchor < bottom + 10) { 
+                           ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top - 5, yAnchor)); 
                         }
                     }
 
-                    // Dibujar valores fuera de rango para Temp, FC, FR
                     ['Temperatura', 'Frec. Cardíaca', 'Frec. Respiratoria'].forEach(label => {
                         const datasetIndex = data.datasets.findIndex(ds => ds.label === label);
                         if (datasetIndex === -1) return;
                         
                         const dataset = data.datasets[datasetIndex];
                         const yScale = chart.scales[dataset.yAxisID];
-                        const value = dataset.data[index]; // Este es el valor que se pasó a Chart.js
+                        const value = dataset.data[index]; 
 
                         if (value === null || value === undefined || !yScale) return;
 
@@ -655,6 +681,14 @@
         };
 
         function createChart(currentData) {
+            if (!currentData || currentData.length === 0) {
+                console.log("createChart llamado con datos vacíos o nulos.");
+                if (vitalSignsChart) vitalSignsChart.destroy(); // Destruir gráfico existente si hay
+                // Podrías dibujar un gráfico placeholder aquí si lo deseas
+                return;
+            }
+            console.log("Creando gráfico con datos:", currentData);
+
             const labels = formatXAxisLabels(currentData);
             let scalesOptions = {
                 x: { type: 'category', labels: labels, grid: { display: true, color: 'rgba(200,200,200,0.2)', borderColor: 'rgba(200,200,200,0.5)', borderDash: [2,3]}, ticks: { color: '#555', font: {size: 10}}},
@@ -674,7 +708,7 @@
                         { label: 'Frec. Cardíaca', data: currentData.map(d => d.fc), borderColor: 'blue', backgroundColor: 'blue', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFC', order: 2, spanGaps: true },
                         { label: 'Frec. Respiratoria', data: currentData.map(d => d.fr), borderColor: 'black', backgroundColor: 'black', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFR', order: 3, spanGaps: true },
                         { label: 'Tensión Arterial', data: currentData.map(d => (d.tas && d.tad) ? [d.tad, d.tas] : null), backgroundColor: 'rgba(46, 204, 113, 0.7)', borderColor: 'green', borderWidth: 2, barPercentage: 0.1, categoryPercentage: 0.2, yAxisID: 'yBP', type: 'bar', order: 0 },
-                        { label: 'SatO₂', data: currentData.map(d => d.sato2), hidden: true, yAxisID: 'yTemp' } // Para el plugin
+                        { label: 'SatO₂', data: currentData.map(d => d.sato2), hidden: true, yAxisID: 'yTemp' } 
                     ]
                 },
                 options: {
@@ -691,10 +725,9 @@
                                     } else if (context.parsed.y !== null) {
                                         label += context.parsed.y;
                                     }
-                                    // Podríamos intentar añadir SatO2 al tooltip aquí si es necesario
-                                    const originalDataPoint = patientData[context.dataIndex]; // Acceder a patientData global
+                                    const originalDataPoint = patientData[context.dataIndex]; 
                                     if (originalDataPoint && originalDataPoint.sato2 !== undefined && context.dataset.label !== 'SatO₂') {
-                                        // No añadirlo directamente al label para no confundir, pero se podría
+                                        // Podrías añadir SatO2 aquí si es necesario, pero el plugin ya lo dibuja
                                     }
                                     return label;
                                 }
@@ -712,19 +745,23 @@
 
         function renderDataTable() {
             dataTableBody.innerHTML = '';
+            if (!patientData || patientData.length === 0) {
+                console.log("renderDataTable: No hay datos para mostrar.");
+                return;
+            }
             patientData.forEach(d => {
                 const row = dataTableBody.insertRow();
-                row.insertCell().textContent = d.fecha ? new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-ES') : '-'; // Asegurar que se trate como local
+                row.insertCell().textContent = d.fecha ? new Date(d.fecha + 'T00:00:00Z').toLocaleDateString('es-ES', {timeZone: 'Europe/Madrid'}) : '-';
                 row.insertCell().textContent = d.turno || '-';
                 row.insertCell().textContent = d.temp !== undefined ? d.temp.toFixed(1) : '-';
-                row.insertCell().textContent = (d.tas && d.tad) ? `${d.tas}/${d.tad}` : '-';
+                row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined) ? `${d.tas}/${d.tad}` : '-';
                 row.insertCell().textContent = d.fc !== undefined ? d.fc : '-';
                 row.insertCell().textContent = d.fr !== undefined ? d.fr : '-';
-                row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-'; // Corregido de satO2 a sato2
+                row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-';
             });
         }
         
-        inputFecha.valueAsDate = new Date(); // Fecha actual por defecto
+        inputFecha.valueAsDate = new Date(); 
 
         addDataButton.addEventListener('click', () => {
             const fecha = inputFecha.value;
@@ -741,15 +778,13 @@
                 tad: inputTAD.value ? parseInt(inputTAD.value) : undefined,
                 fc: inputFC.value ? parseInt(inputFC.value) : undefined,
                 fr: inputFR.value ? parseInt(inputFR.value) : undefined,
-                sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined, // Corregido de satO2 a sato2
+                sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined,
             };
 
             if (existingEntryIndex > -1) {
-                // Actualizar entrada existente
                 patientData[existingEntryIndex] = {...patientData[existingEntryIndex], ...newData};
                  alert("Registro actualizado para esta fecha y turno.");
             } else {
-                // Añadir nueva entrada
                 patientData.push(newData);
             }
 
@@ -762,8 +797,6 @@
 
             createChart(patientData);
             renderDataTable();
-            // Opcional: Limpiar campos de entrada
-            // [inputTemp, inputTAS, inputTAD, inputFC, inputFR, inputSatO2].forEach(input => input.value = '');
         });
 
         // --- Inicialización al Cargar la Página ---
