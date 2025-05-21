@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSheed (Helios Prototype)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0"></script>
+
+    <style>
+        /* Usando la fuente Inter como es recomendado */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 45vh; /* Aumentamos un poco la altura para mejor visualización */
+            width: 100%;
+            max-width: 700px; /* Aumentamos un poco el ancho máximo */
+            background-color: #1f2937;
+            padding: 1.5rem; /* Más padding */
+            border-radius: 0.75rem; /* Bordes más redondeados */
+        }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .message-box {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4B5563;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1050; /* Asegurar que esté sobre el menú */
+            font-size: 1rem;
+        }
+        .message-box.success { background-color: #10B981; }
+        .message-box.error { background-color: #EF4444; }
+        .message-box.info { background-color: #3B82F6; }
+
+        /* Estilos para el menú hamburguesa */
+        .hamburger-menu {
+            position: fixed;
+            top: 0;
+            left: -280px; /* Oculto por defecto */
+            width: 280px;
+            height: 100%;
+            background-color: #111827; /* Un poco más oscuro que el header */
+            padding-top: 60px; /* Espacio para el botón de cerrar si se añade */
+            transition: left 0.3s ease;
+            z-index: 1040; /* Debajo del message-box pero sobre el contenido */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+        }
+        .hamburger-menu.open {
+            left: 0;
+        }
+        .hamburger-menu a {
+            padding: 12px 18px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            color: #D1D5DB; /* Gris claro */
+            display: block;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-bottom: 1px solid #374151; /* Separador sutil */
+        }
+        .hamburger-menu a:hover {
+            background-color: #374151; /* Gris medio */
+            color: #FFFFFF;
+        }
+        .hamburger-menu a:last-child {
+            border-bottom: none;
+        }
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1030;
+        }
+        .menu-overlay.open {
+            display: block;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-black text-gray-200 min-h-screen flex flex-col">
+
+    <div id="menu-overlay" class="menu-overlay"></div>
+    <div id="hamburger-menu" class="hamburger-menu">
+        <a href="#" id="menu-close-button" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</a>
+        <a href="#" id="menu-cargar-datos">Cargar Datos Demo (CSV)</a>
+        <a href="#" id="menu-descargar-plantilla">Descargar Hoja Tipo (CSV)</a>
+        </div>
+
+    <header class="bg-gray-800 shadow-md p-4 sticky top-0 z-50 flex items-center">
+        <button id="hamburger-button" class="text-white text-2xl p-2 focus:outline-none hover:bg-gray-700 rounded-md mr-4">
+            &#9776; </button>
+        <h1 class="text-xl sm:text-2xl font-bold text-white">DataSheed (Helios Prototype)</h1>
+    </header>
+
+    <div class="p-4 bg-gray-900 shadow-lg">
+        <div class="container mx-auto flex flex-wrap gap-4 justify-center items-center">
+            <div>
+                <label for="patient-select" class="block text-sm font-medium text-gray-300">Seleccionar Paciente:</label>
+                <select id="patient-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Todos los Pacientes</option>
+                </select>
+            </div>
+            <div>
+                <label for="time-range" class="block text-sm font-medium text-gray-300">Rango de Tiempo:</label>
+                <select id="time-range" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-700 bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="8">Últimas 8 horas</option>
+                    <option value="24" selected>Últimas 24 horas</option>
+                    <option value="168">Última Semana</option>
+                    <option value="720">Último Mes</option>
+                </select>
+            </div>
+            <input type="file" id="data-file-input" accept=".csv" class="hidden"/>
+            <div>
+                <label for="load-data-button-visible" class="block text-sm font-medium text-gray-300 invisible">Cargar:</label> <button id="load-data-button-visible" class="mt-1 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md shadow-md transition duration-150 ease-in-out">Cargar Archivo CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow container mx-auto p-4">
+        <div id="charts-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="chart-container rounded-lg shadow-xl">
+                <h2 class="text-lg font-semibold text-center mb-2">Frecuencia Cardíaca y Respiratoria</h2>
+                <canvas id="chartFCFR"></canvas>
+            </div>
+            <div class="chart-container rounded-lg shadow-xl">
+                <h2 class="text-lg font-semibold text-center mb-2">Presión Arterial (Sistólica, Diastólica, Media)</h2>
+                <canvas id="chartPresionArterial"></canvas>
+            </div>
+            <div class="chart-container rounded-lg shadow-xl">
+                <h2 class="text-lg font-semibold text-center mb-2">Saturación de Oxígeno (SpO2)</h2>
+                <canvas id="chartSpO2"></canvas>
+            </div>
+            <div class="chart-container rounded-lg shadow-xl">
+                <h2 class="text-lg font-semibold text-center mb-2">Temperatura</h2>
+                <canvas id="chartTemperatura"></canvas>
+            </div>
+        </div>
+        <div id="no-data-message" class="text-center text-gray-500 py-10" style="display: none;">
+            <p>No hay datos para mostrar. Por favor, cargue un archivo CSV o seleccione uno desde el menú.</p>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-center p-4 mt-auto">
+        <p class="text-sm text-gray-400">&copy; 2025 DataSheed (Helios Prototype). Creado con ayuda de IA.</p>
+    </footer>
+
+    <div id="message-box-container" class="message-box"></div>
+
+    <script>
+        // Referencias a elementos del DOM
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const menuCloseButton = document.getElementById('menu-close-button');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const menuCargarDatos = document.getElementById('menu-cargar-datos');
+        const menuDescargarPlantilla = document.getElementById('menu-descargar-plantilla');
+        const dataFileInput = document.getElementById('data-file-input');
+        const loadDataButtonVisible = document.getElementById('load-data-button-visible'); // Botón visible
+        const patientSelect = document.getElementById('patient-select');
+        const timeRangeSelect = document.getElementById('time-range');
+        const noDataMessage = document.getElementById('no-data-message');
+        const chartsGrid = document.getElementById('charts-grid');
+        const messageBoxContainer = document.getElementById('message-box-container');
+
+
+        let charts = {};
+        let allPatientData = [];
+        let patientIDs = new Set();
+
+        const coloresIndicadores = {
+            'Frecuencia Cardiaca': 'rgba(54, 162, 235, 1)',
+            'Frecuencia Respiratoria': 'rgba(75, 192, 192, 1)',
+            'Presión Arterial Sistólica': 'rgba(255, 99, 132, 1)',
+            'Presión Arterial Diastólica': 'rgba(255, 159, 64, 1)',
+            'Presión Arterial Media': 'rgba(255, 205, 86, 1)',
+            'Saturacion de Oxigeno': 'rgba(153, 102, 255, 1)',
+            'Temperatura': 'rgba(201, 203, 207, 1)',
+            'Escala de Glasgow': 'rgba(255, 99, 71, 1)',
+        };
+
+        // --- Funciones del Menú Hamburguesa ---
+        function openMenu() {
+            hamburgerMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+
+        function closeMenu() {
+            hamburgerMenu.classList.remove('open');
+            menuOverlay.classList.remove('open');
+        }
+
+        hamburgerButton.addEventListener('click', openMenu);
+        menuCloseButton.addEventListener('click', closeMenu);
+        menuOverlay.addEventListener('click', closeMenu);
+
+        menuCargarDatos.addEventListener('click', (e) => {
+            e.preventDefault();
+            dataFileInput.click(); // Abre el selector de archivos
+            closeMenu();
+        });
+        
+        loadDataButtonVisible.addEventListener('click', () => {
+            dataFileInput.click(); // El botón visible también abre el selector de archivos
+        });
+
+        menuDescargarPlantilla.addEventListener('click', (e) => {
+            e.preventDefault();
+            const csvHeaders = "Timestamp,PatientID,IndicatorName,Value,Unit\n";
+            const csvExampleRow = "2025-05-21 10:00:00,Paciente01,Frecuencia Cardiaca,75,bpm\n";
+            const csvContent = csvHeaders + csvExampleRow + "2025-05-21 10:00:00,Paciente01,Saturacion de Oxigeno,98,%\n";
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) { // Feature detection
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "plantilla_datos_pacientes.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+            showMessage('Plantilla CSV descargada.', 'success');
+            closeMenu();
+        });
+
+        // --- Funciones de la Aplicación ---
+        function showMessage(message, type = 'info', duration = 3000) {
+            messageBoxContainer.textContent = message;
+            messageBoxContainer.className = 'message-box ' + type;
+            messageBoxContainer.style.display = 'block';
+            setTimeout(() => {
+                messageBoxContainer.style.display = 'none';
+            }, duration);
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/); // Manejar saltos de línea Windows y Unix
+            if (lines.length < 2) {
+                showMessage('El archivo CSV está vacío o no tiene datos.', 'error');
+                return [];
+            }
+            const headers = lines[0].split(',').map(header => header.trim());
+            const data = [];
+            patientIDs.clear(); // Limpiar IDs de pacientes antes de procesar nuevo archivo
+
+            const expectedHeaders = ['Timestamp', 'PatientID', 'IndicatorName', 'Value', 'Unit'];
+            let missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
+            if (missingHeaders.length > 0) {
+                showMessage(`El CSV no tiene las cabeceras esperadas. Faltan: ${missingHeaders.join(', ')}`, 'error');
+                console.error(`El CSV no tiene las cabeceras esperadas. Faltan: ${missingHeaders.join(', ')}`);
+                return [];
+            }
+
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === "") continue; // Saltar líneas vacías
+                const values = lines[i].split(',').map(value => value.trim());
+                if (values.length === headers.length) {
+                    const entry = {};
+                    headers.forEach((header, index) => {
+                        entry[header] = values[index];
+                    });
+                    
+                    entry.Value = parseFloat(entry.Value);
+                    // Intentar parsear la fecha. Asumimos formato como "YYYY-MM-DD HH:MM:SS" o ISO
+                    entry.Timestamp = luxon.DateTime.fromISO(entry.Timestamp).toJSDate() || luxon.DateTime.fromSQL(entry.Timestamp).toJSDate();
+
+                    if (!isNaN(entry.Value) && entry.Timestamp instanceof Date && !isNaN(entry.Timestamp.getTime())) {
+                        data.push(entry);
+                        patientIDs.add(entry.PatientID);
+                    } else {
+                        console.warn('Entrada de CSV ignorada por valor o fecha inválida:', lines[i], "Parsed Date:", entry.Timestamp, "Parsed Value:", entry.Value);
+                    }
+                } else {
+                     console.warn('Línea de CSV con número incorrecto de columnas:', lines[i]);
+                }
+            }
+            return data;
+        }
+        
+        function populatePatientSelector() {
+            while (patientSelect.options.length > 1) {
+                patientSelect.remove(1);
+            }
+            // Ordenar IDs de pacientes alfanuméricamente
+            const sortedPatientIDs = Array.from(patientIDs).sort();
+            sortedPatientIDs.forEach(id => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${id}`; // Mostrar solo el ID
+                patientSelect.appendChild(option);
+            });
+        }
+
+        function filterData() {
+            const selectedPatientID = patientSelect.value;
+            const selectedTimeRangeHours = parseInt(timeRangeSelect.value);
+            const now = luxon.DateTime.now();
+            const startTime = now.minus({ hours: selectedTimeRangeHours });
+
+            let filtered = allPatientData.filter(d => {
+                const isCorrectPatient = selectedPatientID === "" || d.PatientID === selectedPatientID;
+                const dataTimestamp = luxon.DateTime.fromJSDate(d.Timestamp);
+                const isInTimeRange = dataTimestamp >= startTime && dataTimestamp <= now;
+                return isCorrectPatient && isInTimeRange;
+            });
+            return filtered;
+        }
+        
+        function crearActualizarGraficos() {
+            const data = filterData();
+
+            if (data.length === 0 && allPatientData.length > 0) { // Hay datos cargados pero el filtro no arroja resultados
+                noDataMessage.innerHTML = '<p>No hay datos para mostrar con los filtros seleccionados.</p>';
+                noDataMessage.style.display = 'block';
+                chartsGrid.style.display = 'none';
+                Object.values(charts).forEach(chart => chart.destroy());
+                charts = {};
+                return;
+            } else if (allPatientData.length === 0) { // No hay datos cargados en absoluto
+                 noDataMessage.innerHTML = '<p>No hay datos para mostrar. Por favor, cargue un archivo CSV o seleccione uno desde el menú.</p>';
+                noDataMessage.style.display = 'block';
+                chartsGrid.style.display = 'none';
+                Object.values(charts).forEach(chart => chart.destroy());
+                charts = {};
+                return;
+            }
+
+            noDataMessage.style.display = 'none';
+            chartsGrid.style.display = 'grid';
+
+            const commonOptions = (yAxisLabel = 'Valor') => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        adapters: {
+                            date: { meridiem: false } // Asegura formato de 24 horas si es necesario
+                        },
+                        time: {
+                            unit: parseInt(timeRangeSelect.value) <= 24 ? 'hour' : 'day',
+                            tooltipFormat: 'dd/MM/yyyy HH:mm',
+                            displayFormats: {
+                                hour: 'HH:mm', // Formato de 24 horas
+                                day: 'dd/MM'
+                            }
+                        },
+                        title: { display: true, text: 'Tiempo', color: '#9CA3AF' },
+                        ticks: { color: '#9CA3AF', major: { enabled: true } },
+                        grid: { color: 'rgba(156, 163, 175, 0.2)' }
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel, color: '#9CA3AF' },
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: 'rgba(156, 163, 175, 0.2)' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#D1D5DB' } },
+                    tooltip: {
+                        backgroundColor: 'rgba(31, 41, 55, 0.9)', // Fondo de tooltip más oscuro
+                        titleColor: '#F3F4F6',
+                        bodyColor: '#E5E7EB',
+                        borderColor: '#4B5563',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toFixed(1); // Mostrar con un decimal
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
+                elements: {
+                    line: {
+                        borderWidth: 2.5 // Líneas un poco más gruesas
+                    },
+                    point: {
+                        radius: 3, // Puntos un poco más grandes
+                        hoverRadius: 5
+                    }
+                }
+            });
+
+            const datasetsConfig = [
+                { 
+                    chartId: 'chartFCFR', 
+                    title: 'Frecuencia Cardíaca y Respiratoria',
+                    yLabel: 'Valor',
+                    indicators: [
+                        { name: 'Frecuencia Cardiaca', unit: 'bpm' },
+                        { name: 'Frecuencia Respiratoria', unit: 'rpm' }
+                    ]
+                },
+                {
+                    chartId: 'chartPresionArterial',
+                    title: 'Presión Arterial',
+                    yLabel: 'mmHg',
+                    indicators: [
+                        { name: 'Presión Arterial Sistólica', unit: 'mmHg' },
+                        { name: 'Presión Arterial Diastólica', unit: 'mmHg' },
+                        { name: 'Presión Arterial Media', unit: 'mmHg' }
+                    ]
+                },
+                {
+                    chartId: 'chartSpO2',
+                    title: 'Saturación de Oxígeno (SpO2)',
+                    yLabel: '%',
+                    indicators: [ { name: 'Saturacion de Oxigeno', unit: '%' } ],
+                    suggestedMin: 85, suggestedMax: 100
+                },
+                {
+                    chartId: 'chartTemperatura',
+                    title: 'Temperatura',
+                    yLabel: '°C',
+                    indicators: [ { name: 'Temperatura', unit: '°C' } ],
+                    suggestedMin: 35, suggestedMax: 42
+                }
+            ];
+
+            datasetsConfig.forEach(config => {
+                const chartDataSets = config.indicators.map(indicator => {
+                    const indicatorData = data
+                        .filter(d => d.IndicatorName === indicator.name)
+                        .map(d => ({ x: d.Timestamp, y: d.Value }));
+                    return {
+                        label: `${indicator.name} (${indicator.unit})`,
+                        data: indicatorData,
+                        borderColor: coloresIndicadores[indicator.name] || 'rgba(200, 200, 200, 1)',
+                        tension: 0.2, // Curvas más suaves
+                        pointBackgroundColor: coloresIndicadores[indicator.name] || 'rgba(200, 200, 200, 1)'
+                    };
+                });
+
+                if (charts[config.chartId]) charts[config.chartId].destroy();
+                
+                const currentOptions = commonOptions(config.yLabel);
+                if (config.suggestedMin !== undefined) currentOptions.scales.y.suggestedMin = config.suggestedMin;
+                if (config.suggestedMax !== undefined) currentOptions.scales.y.suggestedMax = config.suggestedMax;
+
+                charts[config.chartId] = new Chart(document.getElementById(config.chartId), {
+                    type: 'line',
+                    data: { datasets: chartDataSets },
+                    options: currentOptions
+                });
+            });
+        }
+
+        dataFileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        allPatientData = parseCSV(e.target.result);
+                        if (allPatientData.length > 0) {
+                            populatePatientSelector();
+                            crearActualizarGraficos();
+                            showMessage(`Archivo ${file.name} cargado y procesado. ${allPatientData.length} registros válidos.`, 'success');
+                        } else if (!messageBoxContainer.textContent.includes("El CSV no tiene las cabeceras esperadas")) { // No mostrar doble mensaje si ya hubo error de cabeceras
+                             showMessage('No se encontraron datos válidos en el archivo o el formato es incorrecto.', 'error');
+                        }
+                    } catch (error) {
+                        showMessage(`Error al procesar el archivo CSV: ${error.message}`, 'error');
+                        console.error("Error al procesar CSV:", error);
+                    }
+                };
+                reader.onerror = function() {
+                    showMessage('Error al leer el archivo.', 'error');
+                    console.error("Error al leer el archivo:", reader.error);
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        patientSelect.addEventListener('change', crearActualizarGraficos);
+        timeRangeSelect.addEventListener('change', crearActualizarGraficos);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            noDataMessage.style.display = 'block';
+            chartsGrid.style.display = 'none';
+            // Asegurar que Luxon esté disponible para Chart.js
+            Chart.defaults.adapter = luxon.DateTime;
+        });
+
+    </script>
+</body>
+</html>
