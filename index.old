@@ -324,14 +324,13 @@
                 return newEntry;
             }).filter(entry => entry !== null); 
             
-            // Corrección en la función de ordenación:
             transformed.sort((a,b) => { 
                 const tsA = getTimestampFromDataPoint(a); 
                 const tsB = getTimestampFromDataPoint(b);
                 if (tsA === null && tsB === null) return 0;
-                if (tsA === null) return 1; // nulls al final
-                if (tsB === null) return -1; // nulls al final
-                return tsA - tsB; // Comparación numérica directa
+                if (tsA === null) return 1; 
+                if (tsB === null) return -1; 
+                return tsA - tsB; 
             });
             patientData = transformed; 
 
@@ -457,27 +456,17 @@
         }
         
         applyScaleButton.addEventListener('click', () => { updateChartView(); alert("Escalas actualizadas. Vuelve al 'Dashboard Gráfico' para ver cambios."); });
-        function renderDataTable() { /* ... (Modificado para incluir Hora) ... */
+        function renderDataTable() { 
             dataTableBody.innerHTML = ''; if (!patientData || patientData.length === 0) return;
             const sortedTableData = [...patientData].sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (tsA === null && tsB === null) return 0; if (tsA === null) return 1; if (tsB === null) return -1; return tsA - tsB; }); 
             const dataTableHeader = document.querySelector('#dataTable thead tr');
-            // Asegurar que la cabecera de Hora solo se añade una vez
             let horaHeaderExists = false;
-            for(let i=0; i < dataTableHeader.children.length; i++){
-                if(dataTableHeader.children[i].textContent === "Hora") {
-                    horaHeaderExists = true;
-                    break;
-                }
-            }
-            if (!horaHeaderExists && dataTableHeader.children.length >= 1) { 
-                 const horaTh = document.createElement('th'); horaTh.textContent = "Hora"; 
-                 dataTableHeader.insertBefore(horaTh, dataTableHeader.children[1]);
-            }
-
+            for(let i=0; i < dataTableHeader.children.length; i++){ if(dataTableHeader.children[i].textContent === "Hora") { horaHeaderExists = true; break; }}
+            if (!horaHeaderExists && dataTableHeader.children.length >= 1) { const horaTh = document.createElement('th'); horaTh.textContent = "Hora"; dataTableHeader.insertBefore(horaTh, dataTableHeader.children[1]); }
             sortedTableData.forEach(d => { const row = dataTableBody.insertRow(); let displayDate = '-'; if (d.fecha) { try { const dateParts = d.fecha.split('-'); const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) -1, parseInt(dateParts[2])); displayDate = localDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) {}} row.insertCell().textContent = displayDate; row.insertCell().textContent = d.hora || '-'; row.insertCell().textContent = d.turno || '-'; row.insertCell().textContent = d.temp !== undefined ? d.temp.toFixed(1) : '-'; row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined) ? `${d.tas}/${d.tad}` : '-'; row.insertCell().textContent = d.fc !== undefined ? d.fc : '-'; row.insertCell().textContent = d.fr !== undefined ? d.fr : '-'; row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-'; });
         }
         inputFecha.valueAsDate = new Date(); 
-        addDataButton.addEventListener('click', () => { /* ... (Modificado para usar hora) ... */
+        addDataButton.addEventListener('click', () => { 
             const fecha = inputFecha.value; const horaMin = inputHoraMinutos.value; const turno = inputTurno.value; if (!fecha) { alert("Introduce una fecha."); return; } let horaParaGuardar = undefined; if (horaMin) { const hmParts = horaMin.split(':'); if (hmParts.length === 2 && !isNaN(parseInt(hmParts[0])) && !isNaN(parseInt(hmParts[1]))) { horaParaGuardar = horaMin; } else { alert("Formato de hora inválido."); return; }}
             const existingEntryIndex = patientData.findIndex(d => d.fecha === fecha && (horaParaGuardar ? d.hora === horaParaGuardar : d.turno === turno) );
             const newData = { fecha: fecha, turno: turno, hora: horaParaGuardar, temp: inputTemp.value ? parseFloat(inputTemp.value) : undefined, tas: inputTAS.value ? parseInt(inputTAS.value) : undefined, tad: inputTAD.value ? parseInt(inputTAD.value) : undefined, fc: inputFC.value ? parseInt(inputFC.value) : undefined, fr: inputFR.value ? parseInt(inputFR.value) : undefined, sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined, };
@@ -493,8 +482,6 @@
             updateChartView(); 
             renderDataTable();
         }, 100);
-
-
     </script>
 </body>
 </html>
