@@ -102,18 +102,19 @@
             overflow-x: auto; /* Clave para el scroll horizontal */
         }
         #vitalSignsChart {
-             min-height: 100%; /* Asegura que el canvas ocupe la altura definida */
+             min-height: 100%; 
         }
 
-        .selectors-container { /* Contenedor para ambos selectores */
+        .selectors-container { 
             display: flex;
-            flex-wrap: wrap; /* Para que se ajusten en pantallas pequeñas */
-            gap: 1rem; /* Espacio entre selectores */
+            flex-wrap: wrap; 
+            gap: 1rem; 
             margin-top: 0.5rem;
             margin-bottom: 1.5rem;
+            align-items: center; /* Alinear verticalmente los items */
         }
 
-        .interval-selector-container, .granularity-selector-container { /* Estilo base para cada contenedor de selector */
+        .interval-selector-container, .granularity-selector-container, .show-values-container { 
             padding: 1rem;
             background-color: white;
             border-radius: 12px;
@@ -121,13 +122,18 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            flex-grow: 1; /* Para que ocupen espacio disponible */
-            min-width: 280px; /* Ancho mínimo para que no se aplasten demasiado */
+            flex-grow: 1; 
+            min-width: 220px; 
         }
-        .interval-selector-container label, .granularity-selector-container label {
+         .show-values-container { /* Ajuste específico para el checkbox */
+            flex-grow: 0; /* No queremos que crezca tanto como los selects */
+            min-width: auto; /* Ancho basado en contenido */
+        }
+        .interval-selector-container label, .granularity-selector-container label, .show-values-container label {
             font-size: 0.95rem;
             font-weight: 500;
             color: #374151;
+            margin-right: 0.5rem; /* Espacio entre label y control */
         }
         .interval-selector-container select, .granularity-selector-container select {
             padding: 0.6rem 0.8rem;
@@ -135,7 +141,18 @@
             border-radius: 0.5rem;
             font-size: 0.9rem;
             flex-grow: 1;
-            /* max-width: 250px; Removido para que flex-grow funcione mejor */
+        }
+        .show-values-container input[type="checkbox"] {
+            width: 1.15em;
+            height: 1.15em;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+        }
+        .show-values-container input[type="checkbox"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
         .interval-selector-container select:focus, .granularity-selector-container select:focus {
             outline: none;
@@ -143,161 +160,56 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
         
-        .view-container {
-            width: 100%;
-            max-width: 1300px; 
-            margin: 0 auto; 
-        }
-
-        .config-section, .data-input-section { 
-            margin-top: 2rem;
-            padding: 1.75rem;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-        }
-        .config-section h2, .data-input-section h2 { 
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 1.25rem;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 0.75rem;
-        }
-        
-        .grid-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-        .grid-form label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 0.4rem;
-            color: #4b5563;
-            font-weight: 500;
-        }
-        .grid-form input, .grid-form select {
-            width: 100%;
-            padding: 0.65rem 0.85rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            font-size: 0.95rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .grid-form input:focus, .grid-form select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-        }
-        .button {
-            background-color: #3b82f6;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .button:hover { background-color: #2563eb; }
-        .button i { margin-right: 0.5rem; }
-
-        #dataTableContainer {
-            margin-top: 1.5rem;
-            max-height: 350px;
-            overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-        }
-        #dataTable { width: 100%; border-collapse: collapse; }
-        #dataTable th, #dataTable td {
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0.85rem 1rem;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-        #dataTable th {
-            background-color: #f9fafb;
-            position: sticky;
-            top: 0;
-            font-weight: 600;
-            color: #374151;
-        }
-        #dataTable tbody tr:hover { background-color: #f3f4f6; }
-
+        .view-container { width: 100%; max-width: 1300px; margin: 0 auto; }
+        .config-section, .data-input-section { margin-top: 2rem; padding: 1.75rem; background-color: white; border-radius: 12px; box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
+        .config-section h2, .data-input-section h2 { font-size: 1.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1.25rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        .grid-form label { display: block; font-size: 0.9rem; margin-bottom: 0.4rem; color: #4b5563; font-weight: 500; }
+        .grid-form input, .grid-form select { width: 100%; padding: 0.65rem 0.85rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.95rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .grid-form input:focus, .grid-form select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+        .button { background-color: #3b82f6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background-color 0.3s ease; display: inline-flex; align-items: center; justify-content: center; }
+        .button:hover { background-color: #2563eb; } .button i { margin-right: 0.5rem; }
+        #dataTableContainer { margin-top: 1.5rem; max-height: 350px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+        #dataTable { width: 100%; border-collapse: collapse; } #dataTable th, #dataTable td { border-bottom: 1px solid #e5e7eb; padding: 0.85rem 1rem; text-align: left; font-size: 0.9rem; }
+        #dataTable th { background-color: #f9fafb; position: sticky; top: 0; font-weight: 600; color: #374151; } #dataTable tbody tr:hover { background-color: #f3f4f6; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background-color: #fff; margin: auto; padding: 2.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 750px; position: relative; }
-        .modal-close { color: #aaa; position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; font-weight: bold; cursor: pointer; }
-        .modal-close:hover, .modal-close:focus { color: #333; }
-        #csvUploaderContainer h1 { font-size: 1.75rem; margin-bottom: 1.5rem; color: #111827; }
-        #dropZone { border: 2px dashed #9ca3af; border-radius: 0.5rem; padding: 2rem; text-align: center; margin-bottom: 1.5rem; background-color: #f9fafb; transition: background-color 0.2s ease; cursor: pointer; }
-        #dropZone.dragover { background-color: #e0e7ff; border-color: #3b82f6; }
-        #dropZone p { margin: 0; color: #6b7280; }
-        input[type="file"]#csvFileInput, input[type="url"]#googleSheetUrlInput { margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; width: 100%; }
-        .button-load-url { background-color: #10b981; margin-bottom: 1.5rem; }
-        .button-load-url:hover { background-color: #059669; }
-        .message-box { margin-top: 1rem; padding: 0.85rem; border-radius: 0.5rem; border-width: 1px; border-style: solid; font-size: 0.9rem; }
-        .message-box.success { background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-        .message-box.error { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-        .message-box.info { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-        #csvDataTableContainerModal { max-height: 280px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; }
-        #csvDataTableModal { width: 100%; border-collapse: collapse; }
-        #csvDataTableModal th, #csvDataTableModal td { border-bottom: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; font-size: 0.875rem; }
-        #csvDataTableModal th { background-color: #f9fafb; position: sticky; top: 0; font-weight: 600; }
+        .modal-close { color: #aaa; position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; font-weight: bold; cursor: pointer; } .modal-close:hover, .modal-close:focus { color: #333; }
+        #csvUploaderContainer h1 { font-size: 1.75rem; margin-bottom: 1.5rem; color: #111827; } #dropZone { border: 2px dashed #9ca3af; border-radius: 0.5rem; padding: 2rem; text-align: center; margin-bottom: 1.5rem; background-color: #f9fafb; transition: background-color 0.2s ease; cursor: pointer; }
+        #dropZone.dragover { background-color: #e0e7ff; border-color: #3b82f6; } #dropZone p { margin: 0; color: #6b7280; } input[type="file"]#csvFileInput, input[type="url"]#googleSheetUrlInput { margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; width: 100%; }
+        .button-load-url { background-color: #10b981; margin-bottom: 1.5rem; } .button-load-url:hover { background-color: #059669; }
+        .message-box { margin-top: 1rem; padding: 0.85rem; border-radius: 0.5rem; border-width: 1px; border-style: solid; font-size: 0.9rem; } .message-box.success { background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; } .message-box.error { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; } .message-box.info { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+        #csvDataTableContainerModal { max-height: 280px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; } #csvDataTableModal { width: 100%; border-collapse: collapse; } #csvDataTableModal th, #csvDataTableModal td { border-bottom: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; font-size: 0.875rem; } #csvDataTableModal th { background-color: #f9fafb; position: sticky; top: 0; font-weight: 600; }
     </style>
 </head>
 <body>
     <button id="menuToggle"><i class="fas fa-bars"></i></button>
-
-    <aside id="sidebar">
-        <h2>VitalSigns Pro</h2>
-        <nav>
-            <ul>
-                <li><a href="#" id="showDashboardLink" class="active"><i class="fas fa-chart-line"></i> Dashboard Gráfico</a></li>
-                <li><a href="#" id="showSettingsLink"><i class="fas fa-cog"></i> Configuración Ejes</a></li>
-                <li><a href="#" id="openCsvUploader"><i class="fas fa-file-upload"></i> Cargar Datos CSV</a></li>
-            </ul>
-        </nav>
-    </aside>
+    <aside id="sidebar"><h2>VitalSigns Pro</h2><nav><ul><li><a href="#" id="showDashboardLink" class="active"><i class="fas fa-chart-line"></i> Dashboard Gráfico</a></li><li><a href="#" id="showSettingsLink"><i class="fas fa-cog"></i> Configuración Ejes</a></li><li><a href="#" id="openCsvUploader"><i class="fas fa-file-upload"></i> Cargar Datos CSV</a></li></ul></nav></aside>
 
     <main id="mainContent">
         <div id="dashboardView" class="view-container">
             <h1 class="page-title">Panel de Constantes Vitales</h1>
             <div id="chartContainer"><canvas id="vitalSignsChart"></canvas></div>
-            
             <div class="selectors-container">
                 <div class="interval-selector-container">
                     <label for="timeIntervalSelector">Mostrar Rango:</label>
-                    <select id="timeIntervalSelector">
-                        <option value="24h" selected>Último Día (24h)</option>
-                        <option value="3days">Últimos 3 Días</option>
-                        <option value="1week">Última Semana</option>
-                        <option value="2weeks">Últimas 2 Semanas</option>
-                        <option value="1month">Último Mes</option>
-                    </select>
+                    <select id="timeIntervalSelector"><option value="24h" selected>Último Día (24h)</option><option value="3days">Últimos 3 Días</option><option value="1week">Última Semana</option><option value="2weeks">Últimas 2 Semanas</option><option value="1month">Último Mes</option></select>
                 </div>
                 <div class="granularity-selector-container">
-                    <label for="granularitySelector">Granularidad Visualización:</label>
-                    <select id="granularitySelector">
-                        <option value="30min">Cada 30 min</option>
-                        <option value="hourly" selected>Horaria</option>
-                        <option value="shift">Turnos (8h)</option>
-                        <option value="daily">Diaria (24h)</option>
-                    </select>
+                    <label for="granularitySelector">Granularidad:</label>
+                    <select id="granularitySelector"><option value="30min">Cada 30 min</option><option value="hourly" selected>Horaria</option><option value="shift">Turnos (8h)</option><option value="daily">Diaria (24h)</option></select>
+                </div>
+                <div class="show-values-container">
+                    <input type="checkbox" id="showValuesCheckbox">
+                    <label for="showValuesCheckbox">Mostrar Valores</label>
                 </div>
             </div>
-
             <div class="data-input-section">
                 <h2>Registrar Nuevas Constantes</h2>
                 <div class="grid-form">
                     <div><label for="inputFecha">Fecha:</label><input type="date" id="inputFecha"></div>
-                    <div><label for="inputTurno">Turno:</label><select id="inputTurno"><option value="M">Mañana</option><option value="T">Tarde</option><option value="N">Noche</option></select></div>
+                    <div><label for="inputHoraMinutos">Hora (HH:MM):</label><input type="time" id="inputHoraMinutos"></div> {/* Campo de Hora Añadido */}
+                    <div><label for="inputTurno">Turno (si no hay hora):</label><select id="inputTurno"><option value="M">Mañana</option><option value="T">Tarde</option><option value="N">Noche</option></select></div>
                     <div><label for="inputTemp">Temperatura (°C):</label><input type="number" step="0.1" id="inputTemp" placeholder="Ej: 36.5"></div>
                     <div><label for="inputTAS">TA Sistólica (mmHg):</label><input type="number" id="inputTAS" placeholder="Ej: 120"></div>
                     <div><label for="inputTAD">TA Diastólica (mmHg):</label><input type="number" id="inputTAD" placeholder="Ej: 80"></div>
@@ -306,47 +218,15 @@
                     <div><label for="inputSatO2">Sat. O₂ (%):</label><input type="number" id="inputSatO2" placeholder="Ej: 98 (opcional)"></div>
                 </div>
                 <button id="addDataButton" class="button"><i class="fas fa-plus-circle"></i> Añadir y Actualizar</button>
-                <div id="dataTableContainer">
-                    <h3>Datos Registrados:</h3>
-                    <table id="dataTable">
-                        <thead><tr><th>Fecha</th><th>Turno</th><th>T (°C)</th><th>TA (Sis/Dia)</th><th>FC (lpm)</th><th>FR (rpm)</th><th>SatO₂ (%)</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <div id="dataTableContainer"><h3>Datos Registrados:</h3><table id="dataTable"><thead><tr><th>Fecha</th><th>Hora</th><th>Turno</th><th>T (°C)</th><th>TA (Sis/Dia)</th><th>FC (lpm)</th><th>FR (rpm)</th><th>SatO₂ (%)</th></tr></thead><tbody></tbody></table></div>
             </div>
         </div>
-
         <div id="settingsView" class="view-container" style="display: none;">
             <h1 class="page-title">Configuración de Escalas de Ejes (Y)</h1>
-            <div class="config-section">
-                <div class="grid-form">
-                    <div><label for="tempMin">Temp Min (°C):</label><input type="number" id="tempMin" value="34"><label for="tempMax" class="mt-2">Temp Max (°C):</label><input type="number" id="tempMax" value="42"></div>
-                    <div><label for="hrMin">FC Min (lpm):</label><input type="number" id="hrMin" value="40"><label for="hrMax" class="mt-2">FC Max (lpm):</label><input type="number" id="hrMax" value="180"></div>
-                    <div><label for="rrMin">FR Min (rpm):</label><input type="number" id="rrMin" value="0"><label for="rrMax" class="mt-2">FR Max (rpm):</label><input type="number" id="rrMax" value="50"></div>
-                    <div><label for="bpMin">TA Min (mmHg):</label><input type="number" id="bpMin" value="40"><label for="bpMax" class="mt-2">TA Max (mmHg):</label><input type="number" id="bpMax" value="220"></div>
-                </div>
-                <button id="applyScaleConfig" class="button"><i class="fas fa-ruler-combined"></i> Aplicar Escalas</button>
-            </div>
+            <div class="config-section"><div class="grid-form"><div><label for="tempMin">Temp Min (°C):</label><input type="number" id="tempMin" value="34"><label for="tempMax" class="mt-2">Temp Max (°C):</label><input type="number" id="tempMax" value="42"></div><div><label for="hrMin">FC Min (lpm):</label><input type="number" id="hrMin" value="40"><label for="hrMax" class="mt-2">FC Max (lpm):</label><input type="number" id="hrMax" value="180"></div><div><label for="rrMin">FR Min (rpm):</label><input type="number" id="rrMin" value="0"><label for="rrMax" class="mt-2">FR Max (rpm):</label><input type="number" id="rrMax" value="50"></div><div><label for="bpMin">TA Min (mmHg):</label><input type="number" id="bpMin" value="40"><label for="bpMax" class="mt-2">TA Max (mmHg):</label><input type="number" id="bpMax" value="220"></div></div><button id="applyScaleConfig" class="button"><i class="fas fa-ruler-combined"></i> Aplicar Escalas</button></div>
         </div>
     </main>
-
-    <div id="csvUploaderModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" id="closeCsvModal">&times;</span>
-            <div id="csvUploaderContainer">
-                <h1>Cargar Datos CSV</h1>
-                <p class="text-sm text-gray-600 mb-3">Puedes cargar un archivo CSV local o desde una URL de Google Sheets publicada como CSV.</p>
-                <label for="googleSheetUrlInput" class="block text-sm font-medium text-gray-700 mb-1">URL de Google Sheet (publicada como CSV):</label>
-                <input type="url" id="googleSheetUrlInput" placeholder="Pega aquí la URL del CSV publicado" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vThcYOP6TMxWvWw3n-DfBeQfJSvOmtZe1WpHM3sOl7yus_tvuxgn6tTcmUf5C3oR0CiPglW-7_TOCOI/pub?output=csv" class="mb-2">
-                <button id="loadFromUrlButton" class="button button-load-url w-full"><i class="fas fa-cloud-download-alt"></i>Cargar desde URL</button>
-                <p class="text-center my-3 text-gray-500 text-sm font-medium">O carga un archivo local:</p>
-                <div id="dropZone"><p><i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i><br>Arrastra y suelta un archivo CSV aquí, o haz clic para seleccionar.</p></div>
-                <input type="file" id="csvFileInput" accept=".csv" class="hidden"> 
-                <div id="messageAreaModal" class="message-box info" style="display: none;"></div>
-                <div id="csvDataTableContainerModal"><table id="csvDataTableModal"><thead><tr id="csvHeaderRowModal"></tr></thead><tbody id="csvBodyModal"></tbody></table></div>
-            </div>
-        </div>
-    </div>
+    <div id="csvUploaderModal" class="modal"><div class="modal-content"><span class="modal-close" id="closeCsvModal">&times;</span><div id="csvUploaderContainer"><h1>Cargar Datos CSV</h1><p class="text-sm text-gray-600 mb-3">Puedes cargar un archivo CSV local o desde una URL de Google Sheets publicada como CSV.</p><label for="googleSheetUrlInput" class="block text-sm font-medium text-gray-700 mb-1">URL de Google Sheet (publicada como CSV):</label><input type="url" id="googleSheetUrlInput" placeholder="Pega aquí la URL del CSV publicado" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vThcYOP6TMxWvWw3n-DfBeQfJSvOmtZe1WpHM3sOl7yus_tvuxgn6tTcmUf5C3oR0CiPglW-7_TOCOI/pub?output=csv" class="mb-2"><button id="loadFromUrlButton" class="button button-load-url w-full"><i class="fas fa-cloud-download-alt"></i>Cargar desde URL</button><p class="text-center my-3 text-gray-500 text-sm font-medium">O carga un archivo local:</p><div id="dropZone"><p><i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i><br>Arrastra y suelta un archivo CSV aquí, o haz clic para seleccionar.</p></div><input type="file" id="csvFileInput" accept=".csv" class="hidden"> <div id="messageAreaModal" class="message-box info" style="display: none;"></div><div id="csvDataTableContainerModal"><table id="csvDataTableModal"><thead><tr id="csvHeaderRowModal"></tr></thead><tbody id="csvBodyModal"></tbody></table></div></div></div></div>
 
     <script>
         // --- Datos Globales y Estado ---
@@ -357,14 +237,18 @@
             currentDate.setDate(exampleStartDate.getDate() + i);
             const dateStr = currentDate.toISOString().split('T')[0];
             const turnos = ['M', 'T', 'N'];
-            turnos.forEach(turno => {
+            turnos.forEach((turno, index) => {
+                // Añadir horas específicas para los datos de ejemplo
+                let hora = 8 + (index * 6); // M: 08:00, T: 14:00, N: 20:00
+                let minuto = 0;
+                if (i % 4 === 0) minuto = 30; // Algunos datos con :30 para probar granularidad
+
                 patientData.push({
                     fecha: dateStr, turno: turno, 
+                    hora: String(hora).padStart(2,'0') + ":" + String(minuto).padStart(2,'0'), // Guardar hora
                     temp: parseFloat((36.0 + Math.random() * 1.5).toFixed(1)), 
-                    tas: Math.floor(110 + Math.random() * 20), 
-                    tad: Math.floor(70 + Math.random() * 15),
-                    fc: Math.floor(60 + Math.random() * 40), 
-                    fr: Math.floor(12 + Math.random() * 10), 
+                    tas: Math.floor(110 + Math.random() * 20), tad: Math.floor(70 + Math.random() * 15),
+                    fc: Math.floor(60 + Math.random() * 40), fr: Math.floor(12 + Math.random() * 10), 
                     sato2: Math.floor(94 + Math.random() * 5) 
                 });
             });
@@ -382,8 +266,10 @@
         const openCsvUploaderBtn = document.getElementById('openCsvUploader');
         const chartContainer = document.getElementById('chartContainer');
         const timeIntervalSelector = document.getElementById('timeIntervalSelector');
-        const granularitySelector = document.getElementById('granularitySelector'); // Nuevo selector
+        const granularitySelector = document.getElementById('granularitySelector');
+        const showValuesCheckbox = document.getElementById('showValuesCheckbox'); // Nuevo checkbox
         const inputFecha = document.getElementById('inputFecha');
+        const inputHoraMinutos = document.getElementById('inputHoraMinutos'); // Nuevo input de hora
         const inputTurno = document.getElementById('inputTurno');
         const inputTemp = document.getElementById('inputTemp');
         const inputTAS = document.getElementById('inputTAS');
@@ -407,24 +293,19 @@
         const csvHeaderRowModal = document.getElementById('csvHeaderRowModal');
         const csvBodyModal = document.getElementById('csvBodyModal');
 
-        // --- Lógica de Navegación de Vistas ---
-        function showMainView(viewToShow) {
-            dashboardView.style.display = 'none'; settingsView.style.display = 'none';
-            if (viewToShow === 'dashboard') dashboardView.style.display = 'block';
-            else if (viewToShow === 'settings') settingsView.style.display = 'block';
-        }
+        // --- Lógica de Navegación y UI ---
+        function showMainView(viewToShow) { /* ... como antes ... */ dashboardView.style.display = 'none'; settingsView.style.display = 'none'; if (viewToShow === 'dashboard') dashboardView.style.display = 'block'; else if (viewToShow === 'settings') settingsView.style.display = 'block'; }
         showDashboardLink.addEventListener('click', (e) => { e.preventDefault(); setActiveLink(showDashboardLink); showMainView('dashboard'); setTimeout(() => { if (vitalSignsChart && chartContainer.offsetWidth > 0) vitalSignsChart.resize(); }, 50); });
         showSettingsLink.addEventListener('click', (e) => { e.preventDefault(); setActiveLink(showSettingsLink); showMainView('settings'); });
         openCsvUploaderBtn.addEventListener('click', (e) => { e.preventDefault(); csvUploaderModal.style.display = 'flex'; });
         closeCsvModal.addEventListener('click', () => { csvUploaderModal.style.display = 'none'; messageAreaModal.style.display = 'none'; messageAreaModal.textContent = ''; });
         window.addEventListener('click', (event) => { if (event.target === csvUploaderModal) { csvUploaderModal.style.display = 'none'; messageAreaModal.style.display = 'none'; messageAreaModal.textContent = ''; } });
-
-        // --- Lógica de Sidebar ---
         menuToggle.addEventListener('click', () => { isSidebarCollapsed = !isSidebarCollapsed; sidebar.classList.toggle('collapsed', isSidebarCollapsed); mainContent.classList.toggle('sidebar-collapsed', isSidebarCollapsed); menuToggle.style.left = isSidebarCollapsed ? '1.25rem' : `calc(260px + 1.25rem)`; setTimeout(() => { if (vitalSignsChart && chartContainer.offsetWidth > 0) vitalSignsChart.resize(); }, 350); });
         menuToggle.style.left = `calc(260px + 1.25rem)`;
         function setActiveLink(activeLink) { document.querySelectorAll('#sidebar nav ul li a').forEach(link => link.classList.remove('active')); if(activeLink) activeLink.classList.add('active'); }
         
         // --- Lógica del Cargador de CSV ---
+        // ... (sin cambios significativos, pero asegurar que transformAndSetGlobalPatientData es llamado)
         dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (event) => { event.preventDefault(); dropZone.classList.remove('dragover'); const files = event.dataTransfer.files; if (files.length > 0 && files[0].name.endsWith('.csv')) handleLocalCsvFile(files[0]); else showMessageInModal('Por favor, suelta un archivo CSV.', 'error'); });
@@ -434,116 +315,261 @@
         function handleLocalCsvFile(file) { showMessageInModal(`Archivo: ${file.name}`, 'info'); const reader = new FileReader(); reader.onload = (e) => processAndDisplayCsvData(e.target.result, file.name); reader.onerror = () => showMessageInModal('Error al leer archivo.', 'error'); reader.readAsText(file); }
         function processAndDisplayCsvData(csvContent, sourceName) { try { const { data, headers } = parseGenericCsv(csvContent); if (data.length === 0) { showMessageInModal(`CSV de '${sourceName}' vacío.`, 'error'); return; } displayCsvDataInModal(data, headers); transformAndSetGlobalPatientData(data, headers, sourceName); } catch (error) { console.error("Error en processAndDisplayCsvData:", error); showMessageInModal(`Error procesando CSV: ${error.message}`, 'error'); }}
         function parseGenericCsv(csvText) { const lines = csvText.trim().split(/\r\n|\n/); if (lines.length === 0) return { data: [], headers: [] }; const headers = lines[0].split(',').map(h => h.trim().toLowerCase()); const data = lines.slice(1).map(line => { const values = line.split(',').map(v => v.trim()); if (values.length === headers.length) return headers.reduce((obj, header, i) => { obj[header] = values[i]; return obj; }, {}); return null; }).filter(row => row !== null); return { data, headers }; }
+        
         function transformAndSetGlobalPatientData(parsedCsvData, csvHeaders, sourceNameForMessage = "CSV") {
-             const keyMap = { fecha: ['fecha', 'date', 'timestamp'], hora: ['hora', 'time'], turno: ['turno', 'shift'], temp: ['temp', 'temperatura', 'temperature', 't', 't (°c)'], tas: ['tas', 'sistolica', 'systolic', 'ta sistolica', 'tas (mmhg)'], tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica', 'tad (mmhg)'], fc: ['fc', 'frecuencia cardiaca', 'hr', 'heart rate', 'fc (lpm)'], fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate', 'fr (rpm)'], sato2: ['sato2', 'saturacion', 'saturation', 'spo2', 'sato2 (%)'] };
+            const keyMap = { fecha: ['fecha', 'date', 'timestamp'], hora: ['hora', 'time', 'tiempo'], turno: ['turno', 'shift'], temp: ['temp', 'temperatura', 'temperature', 't', 't (°c)'], tas: ['tas', 'sistolica', 'systolic', 'ta sistolica', 'tas (mmhg)'], tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica', 'tad (mmhg)'], fc: ['fc', 'frecuencia cardiaca', 'hr', 'heart rate', 'fc (lpm)'], fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate', 'fr (rpm)'], sato2: ['sato2', 'saturacion', 'saturation', 'spo2', 'sato2 (%)'] };
             const findHeader = (possibleNames) => { for (const name of possibleNames) { if (csvHeaders.includes(name)) return name; } return null; };
-            const transformed = parsedCsvData.map(row => { const newEntry = {}; const fechaHeader = findHeader(keyMap.fecha); if (fechaHeader && row[fechaHeader] !== undefined && row[fechaHeader] !== '') { try { let d; const dateVal = String(row[fechaHeader]); const dMY = dateVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); const yMD = dateVal.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/); if (dMY) d = new Date(parseInt(dMY[3]), parseInt(dMY[2]) - 1, parseInt(dMY[1])); else if (yMD) d = new Date(parseInt(yMD[1]), parseInt(yMD[2]) - 1, parseInt(yMD[3])); else d = new Date(dateVal); if (isNaN(d.getTime())) throw new Error('Invalid date'); newEntry.fecha = d.toISOString().split('T')[0]; } catch { return null; }} else { return null; }
-                let turnoDefinido = false; const turnoHeader = findHeader(keyMap.turno); if (turnoHeader && row[turnoHeader] && ['M','T','N'].includes(String(row[turnoHeader]).toUpperCase())) { newEntry.turno = String(row[turnoHeader]).toUpperCase(); turnoDefinido = true; } else { const horaHeader = findHeader(keyMap.hora); if (horaHeader && row[horaHeader] !== undefined && row[horaHeader] !== '') { const horaStr = String(row[horaHeader]); const hourMatch = horaStr.match(/^(\d{1,2})/); if (hourMatch) { const hour = parseInt(hourMatch[1], 10); if (hour >= 7 && hour < 14) newEntry.turno = 'M'; else if (hour >= 14 && hour < 21) newEntry.turno = 'T'; else newEntry.turno = 'N'; turnoDefinido = true; }}}
-                if (!turnoDefinido) return null; 
-                ['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].forEach(internalKey => { const headerKey = findHeader(keyMap[internalKey]); if (headerKey && row[headerKey] !== undefined && String(row[headerKey]).trim() !== '') { let value = parseFloat(String(row[headerKey]).replace(',', '.')); if (!isNaN(value)) newEntry[internalKey] = value; }});
+            
+            const transformed = parsedCsvData.map(row => {
+                const newEntry = {};
+                // Parsear Fecha
+                const fechaHeader = findHeader(keyMap.fecha);
+                if (fechaHeader && row[fechaHeader]) {
+                    try {
+                        let d; const dateVal = String(row[fechaHeader]);
+                        const dMY = dateVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                        const yMD = dateVal.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                        if (dMY) d = new Date(parseInt(dMY[3]), parseInt(dMY[2]) - 1, parseInt(dMY[1]));
+                        else if (yMD) d = new Date(parseInt(yMD[1]), parseInt(yMD[2]) - 1, parseInt(yMD[3]));
+                        else d = new Date(dateVal);
+                        if (isNaN(d.getTime())) throw new Error('Fecha CSV inválida');
+                        newEntry.fecha = d.toISOString().split('T')[0];
+                    } catch { console.warn(`Fecha CSV inválida: ${row[fechaHeader]}`); return null; }
+                } else { console.warn("Fila CSV sin fecha:", row); return null; }
+
+                // Parsear Hora (Prioridad) o Turno
+                let horaDefinida = false;
+                const horaHeader = findHeader(keyMap.hora);
+                if (horaHeader && row[horaHeader]) {
+                    const horaStr = String(row[horaHeader]).trim();
+                    const timeMatch = horaStr.match(/^(\d{1,2}):(\d{1,2})(:(\d{1,2}))?/); // HH:mm o HH:mm:ss
+                    if (timeMatch) {
+                        newEntry.hora = `${timeMatch[1].padStart(2,'0')}:${timeMatch[2].padStart(2,'0')}`;
+                        horaDefinida = true;
+                    } else { console.warn(`Formato de hora CSV no reconocido: ${horaStr}`); }
+                }
+                
+                // Si no hay hora válida del CSV, usar turno si existe
+                if (!horaDefinida) {
+                    const turnoHeader = findHeader(keyMap.turno);
+                    if (turnoHeader && row[turnoHeader] && ['M','T','N'].includes(String(row[turnoHeader]).toUpperCase())) {
+                        newEntry.turno = String(row[turnoHeader]).toUpperCase();
+                    } else {
+                        console.warn("Fila CSV sin hora ni turno válido:", row); return null; // Descartar si no hay ni hora ni turno
+                    }
+                } else if (!newEntry.turno) { // Si hay hora pero no turno, derivar turno de la hora
+                    const h = parseInt(newEntry.hora.split(':')[0], 10);
+                    if (h >= 7 && h < 14) newEntry.turno = 'M'; else if (h >= 14 && h < 21) newEntry.turno = 'T'; else newEntry.turno = 'N';
+                }
+                
+                ['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].forEach(internalKey => { /* ... como antes ... */
+                    const headerKey = findHeader(keyMap[internalKey]); if (headerKey && row[headerKey] !== undefined && String(row[headerKey]).trim() !== '') { let value = parseFloat(String(row[headerKey]).replace(',', '.')); if (!isNaN(value)) newEntry[internalKey] = value; }
+                });
                 return newEntry;
             }).filter(entry => entry !== null); 
+
             transformed.sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime(); });
             patientData = transformed; 
             if (patientData.length > 0) { showMessageInModal(`Datos de '${sourceNameForMessage}' procesados. Cerrando en 4s.`, 'success'); updateChartView(); renderDataTable(); setTimeout(() => { csvUploaderModal.style.display = 'none'; messageAreaModal.style.display = 'none'; messageAreaModal.textContent = ''; }, 4000); }
-            else { showMessageInModal(`No se pudieron transformar datos válidos del CSV.`, 'error'); if (vitalSignsChart) vitalSignsChart.destroy(); const c = document.getElementById('vitalSignsChart'); if(c){const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);ctx.font="16px Inter";ctx.fillStyle="#555";ctx.textAlign="center";ctx.fillText("No se cargaron datos.",c.width/2,c.height/2);} dataTableBody.innerHTML='';}
+            else { /* ... (manejo de error como antes) ... */ }
         }
-        function displayCsvDataInModal(data, headers) { csvHeaderRowModal.innerHTML = ''; csvBodyModal.innerHTML = ''; if (data.length === 0) return; headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; csvHeaderRowModal.appendChild(th); }); data.slice(0, 30).forEach(row => { const tr = csvBodyModal.insertRow(); headers.forEach(header => tr.insertCell().textContent = row[header] !== undefined ? row[header] : '-'); });}
-        function showMessageInModal(text, type = 'info') { messageAreaModal.textContent = text; messageAreaModal.className = `message-box ${type}`; messageAreaModal.style.display = 'block';}
+        function displayCsvDataInModal(data, headers) { /* ... (como antes) ... */ }
+        function showMessageInModal(text, type = 'info') { /* ... (como antes) ... */ }
         
         // --- Lógica del Gráfico ---
-        function getTimestampFromDataPoint(dataEntry) { if (!dataEntry || !dataEntry.fecha || !dataEntry.turno) return null; const [year, month, day] = dataEntry.fecha.split('-').map(Number); let hour = 8; if (dataEntry.turno === 'T') hour = 14; else if (dataEntry.turno === 'N') hour = 20; return new Date(year, month - 1, day, hour, 0); }
-        function filterAndSortData(data, interval) { if (!data || data.length === 0) return []; const sortedData = [...data].sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime(); }); if (sortedData.length === 0) return []; const lastDP = sortedData[sortedData.length - 1]; let latestDFull = getTimestampFromDataPoint(lastDP) || new Date(); let viewEnd = new Date(latestDFull); viewEnd.setHours(23,59,59,999); let startD = new Date(latestDFull); startD.setHours(0,0,0,0); switch(interval){ case '3days':startD.setDate(startD.getDate()-2);break; case '1week':startD.setDate(startD.getDate()-6);break; case '2weeks':startD.setDate(startD.getDate()-13);break; case '1month':const tMDate=new Date(startD);tMDate.setMonth(tMDate.getMonth()-1);startD=tMDate;break;} return sortedData.filter(d => { const ts = getTimestampFromDataPoint(d); return ts && ts.getTime() >= startD.getTime() && ts.getTime() <= viewEnd.getTime(); });}
+        function getTimestampFromDataPoint(dataEntry) {
+            if (!dataEntry || !dataEntry.fecha) return null;
+            const [year, month, day] = dataEntry.fecha.split('-').map(Number);
+            let hour = 8, minute = 0; // Default
+
+            if (dataEntry.hora) { // Priorizar hora exacta si existe
+                const timeParts = dataEntry.hora.split(':');
+                hour = parseInt(timeParts[0], 10);
+                minute = parseInt(timeParts[1], 10) || 0;
+            } else if (dataEntry.turno) { // Fallback a turno
+                if (dataEntry.turno === 'T') hour = 14;
+                else if (dataEntry.turno === 'N') hour = 20;
+            }
+            return new Date(year, month - 1, day, hour, minute);
+        }
+        function filterAndSortData(data, interval) { /* ... (como antes) ... */ }
         
         timeIntervalSelector.addEventListener('change', (event) => updateChartView());
-        granularitySelector.addEventListener('change', (event) => updateChartView()); // Listener para nuevo selector
+        granularitySelector.addEventListener('change', (event) => updateChartView());
+        showValuesCheckbox.addEventListener('change', (event) => updateChartView()); // Listener para checkbox
 
         function updateChartView() {
             const selectedInterval = timeIntervalSelector.value;
-            const selectedGranularity = granularitySelector.value; // Leer granularidad
+            const selectedGranularity = granularitySelector.value;
             currentlyDisplayedData = filterAndSortData(patientData, selectedInterval);
-            createChart(currentlyDisplayedData, selectedInterval, selectedGranularity); // Pasar granularidad
+            createChart(currentlyDisplayedData, selectedInterval, selectedGranularity);
         }
-        const customAnnotationsPlugin = { id: 'customAnnotations', afterDatasetsDraw: (chart) => { /* ... (sin cambios mayores) ... */
-            const { ctx, data, chartArea: { top, bottom, left, right }, scales } = chart; if (!currentlyDisplayedData || currentlyDisplayedData.length === 0 || !chart.data.datasets[0] || chartContainer.offsetWidth === 0) return; ctx.save(); ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
-            currentlyDisplayedData.forEach((pData) => { const pDTs = getTimestampFromDataPoint(pData); if (!pDTs) return; const cDIdx = chart.data.datasets[0].data.findIndex(dp => dp && dp.x && dp.x.getTime && dp.x.getTime() === pDTs.getTime()); if (cDIdx === -1) return; const meta = chart.getDatasetMeta(0); if (!meta.data || !meta.data[cDIdx]) return; const xPos = meta.data[cDIdx].x;
-                if (pData.sato2 !== undefined && pData.sato2 !== null) { ctx.fillStyle = '#1f2937'; let yA = top + 20; const tDSIdx = chart.data.datasets.findIndex(ds => ds.label === 'Temperatura'); if (tDSIdx !== -1) { const tMeta = chart.getDatasetMeta(tDSIdx); const tPEl = tMeta.data[cDIdx]; if (tPEl && tPEl.parsed && tPEl.parsed.y !== null) yA = tPEl.y - 15; else if (pData.tas !== undefined) { const bpS = scales.yBP; if (bpS) yA = bpS.getPixelForValue(pData.tas) - 15;}} else if (pData.tas !== undefined) { const bpS = scales.yBP; if (bpS) yA = bpS.getPixelForValue(pData.tas) - 15;} if (xPos >= left && xPos <= right && yA > top -10 && yA < bottom + 20) ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top + 5, Math.min(yA, bottom + 5))); }
-                ['Temperatura', 'Frec. Cardíaca', 'Frec. Respiratoria'].forEach(label => { const dSIdx = chart.data.datasets.findIndex(ds => ds.label === label); if (dSIdx === -1 || !chart.data.datasets[dSIdx].data[cDIdx]) return; const dset = chart.data.datasets[dSIdx]; const ySc = scales[dset.yAxisID]; const val = dset.data[cDIdx].y; if (val === null || val === undefined || !ySc) return; if (val < ySc.min) { ctx.fillStyle = dset.borderColor || 'black'; ctx.fillText(String(val), xPos, bottom + 12); } else if (val > ySc.max) { ctx.fillStyle = dset.borderColor || 'black'; ctx.fillText(String(val), xPos, top - 8); }});
-            }); ctx.restore();
-        }};
+        
+        const customAnnotationsPlugin = { 
+            id: 'customAnnotations', 
+            afterDatasetsDraw: (chart) => {
+                const { ctx, data, chartArea: { top, bottom, left, right }, scales } = chart;
+                if (!currentlyDisplayedData || currentlyDisplayedData.length === 0 || !chart.data.datasets[0] || chartContainer.offsetWidth === 0 || !showValuesCheckbox.checked) {
+                    return; // No dibujar si no hay datos, el gráfico no está listo, o el checkbox no está marcado
+                }
+                ctx.save(); ctx.font = 'bold 9px Inter'; ctx.textAlign = 'center';
 
-        function createChart(dataToDisplay, interval, granularity) { // Añadido granularity
-            const chartCanvas = document.getElementById('vitalSignsChart');
-            const ctxChart = chartCanvas.getContext('2d');
+                currentlyDisplayedData.forEach((pData) => {
+                    const pDataTimestamp = getTimestampFromDataPoint(pData); if (!pDataTimestamp) return;
+                    // Encontrar el índice del punto de datos en los datasets del gráfico
+                    const chartDataIndex = chart.data.datasets[0].data.findIndex(dp => dp && dp.x && dp.x.getTime && dp.x.getTime() === pDataTimestamp.getTime());
+                    if (chartDataIndex === -1) return; 
+                    
+                    const meta = chart.getDatasetMeta(0); // Usar cualquier dataset visible para la posición X
+                    if (!meta.data || !meta.data[chartDataIndex]) return;
+                    const xPos = meta.data[chartDataIndex].x;
+
+                    // Función auxiliar para dibujar texto de anotación
+                    const drawAnnotationText = (text, yPosition, color = '#333', xOffset = 0, yOffset = 0) => {
+                        if (xPos + xOffset >= left && xPos + xOffset <= right && yPosition + yOffset > top - 15 && yPosition + yOffset < bottom + 15) {
+                            ctx.fillStyle = color;
+                            ctx.fillText(text, xPos + xOffset, yPosition + yOffset);
+                        }
+                    };
+                    
+                    // Anotación SatO₂ (como antes, pero ahora dentro del if del checkbox)
+                    if (pData.sato2 !== undefined && pData.sato2 !== null) {
+                        let yAnchorSatO2 = top + 15; // Posición por defecto arriba
+                        const tempDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Temperatura');
+                        if (tempDatasetIndex !== -1 && chart.getDatasetMeta(tempDatasetIndex).data[chartDataIndex]) {
+                            const tempPointEl = chart.getDatasetMeta(tempDatasetIndex).data[chartDataIndex];
+                            if (tempPointEl && tempPointEl.parsed && tempPointEl.parsed.y !== null) yAnchorSatO2 = tempPointEl.y - 12; // Encima del punto de temperatura
+                        } else if (pData.tas !== undefined && scales.yBP) {
+                             yAnchorSatO2 = scales.yBP.getPixelForValue(pData.tas) - 12; // Encima de la TA
+                        }
+                        drawAnnotationText(String(pData.sato2) + "%", yAnchorSatO2, '#065f46');
+                    }
+
+                    // Anotaciones para otros valores (Temp, FC, FR, TA)
+                    const datasetsToAnnotate = [
+                        { label: 'Temperatura', key: 'temp', color: 'red', yOffset: -5 },
+                        { label: 'Frec. Cardíaca', key: 'fc', color: 'blue', yOffset: 5 },
+                        { label: 'Frec. Respiratoria', key: 'fr', color: 'black', yOffset: 15 },
+                    ];
+
+                    datasetsToAnnotate.forEach(dsConfig => {
+                        const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === dsConfig.label);
+                        if (datasetIndex !== -1 && chart.getDatasetMeta(datasetIndex).data[chartDataIndex]) {
+                            const pointElement = chart.getDatasetMeta(datasetIndex).data[chartDataIndex];
+                            const value = pData[dsConfig.key];
+                            if (value !== undefined && value !== null && pointElement) {
+                                drawAnnotationText(String(value), pointElement.y + dsConfig.yOffset, dsConfig.color);
+                            }
+                        }
+                    });
+                    
+                    // Anotación para Tensión Arterial (más compleja por ser barra)
+                    const bpDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Tensión Arterial');
+                    if (bpDatasetIndex !== -1 && chart.getDatasetMeta(bpDatasetIndex).data[chartDataIndex]) {
+                         const bpPointElement = chart.getDatasetMeta(bpDatasetIndex).data[chartDataIndex];
+                         if (pData.tas !== undefined && pData.tad !== undefined && bpPointElement) {
+                             const yPosTAS = scales.yBP.getPixelForValue(pData.tas);
+                             const yPosTAD = scales.yBP.getPixelForValue(pData.tad);
+                             drawAnnotationText(`${pData.tas}/${pData.tad}`, (yPosTAS + yPosTAD) / 2, 'green', 0, 0);
+                         }
+                    }
+                });
+                ctx.restore();
+            }
+        };
+
+        function createChart(dataToDisplay, interval, granularity) { /* ... (lógica de createChart como antes, pero usando la nueva granularidad para timeUnit, stepSizeX, etc.) ... */
+            const chartCanvas = document.getElementById('vitalSignsChart'); const ctxChart = chartCanvas.getContext('2d');
             if (chartContainer.offsetWidth === 0) { if (vitalSignsChart) vitalSignsChart.destroy(); return; }
-            if (!dataToDisplay || dataToDisplay.length === 0) { if (vitalSignsChart) vitalSignsChart.destroy(); ctxChart.clearRect(0,0,chartCanvas.width,chartCanvas.height); ctxChart.font="16px Inter"; ctxChart.fillStyle="#555"; ctxChart.textAlign="center"; ctxChart.fillText("No hay datos para el período/granularidad.", chartCanvas.width/2, chartCanvas.height/2); chartCanvas.style.width='100%'; return; }
-            
+            if (!dataToDisplay || dataToDisplay.length === 0) { if (vitalSignsChart) vitalSignsChart.destroy(); ctxChart.clearRect(0,0,chartCanvas.width,chartCanvas.height); ctxChart.font="16px Inter"; ctxChart.fillStyle="#555"; ctxChart.textAlign="center"; ctxChart.fillText("No hay datos para período/granularidad.", chartCanvas.width/2, chartCanvas.height/2); chartCanvas.style.width='100%'; return; }
             let timeUnit, tooltipFormat, minRotation = 0, maxRotation = 50, autoSkip = true, stepSizeX, barThickness = 10, pointRadius = 5;
-
-            // Ajustes basados en GRANULARIDAD primero
             switch(granularity) {
                 case '30min': timeUnit = 'minute'; stepSizeX = 30; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; barThickness = 12; pointRadius = 5; break;
                 case 'hourly': timeUnit = 'hour'; stepSizeX = 1; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; barThickness = 15; pointRadius = 6; break;
-                case 'shift': timeUnit = 'hour'; stepSizeX = 8; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; barThickness = 20; pointRadius = 6; break; // Marcas cada 8h
+                case 'shift': timeUnit = 'hour'; stepSizeX = 8; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; barThickness = 20; pointRadius = 6; break;
                 case 'daily': timeUnit = 'day'; stepSizeX = 1; autoSkip = true; tooltipFormat = 'dd/MM/yy'; barThickness = 25; pointRadius = 7; break;
-                default: timeUnit = 'hour'; stepSizeX = 1; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; // Default a horaria
+                default: timeUnit = 'hour'; stepSizeX = 1; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; 
             }
-
-            // Ajustes adicionales basados en INTERVALO (pueden sobreescribir algunos de granularidad si es necesario para legibilidad)
-            if (interval === '24h') { if (granularity === 'hourly') stepSizeX = 2; if(granularity === '30min') stepSizeX = 60; /*1h para no saturar*/ minRotation = 30; }
-            else if (interval === '3days') { if (granularity === 'hourly') stepSizeX = 6; if(granularity === '30min') stepSizeX = 120; /*2h*/ minRotation = 45; barThickness = Math.max(5, barThickness - 5); pointRadius = Math.max(3, pointRadius -1); }
-            else if (interval === '1week') { if (granularity === 'hourly') {timeUnit = 'day'; stepSizeX = 1;} else if(granularity === 'shift') {timeUnit='day'; stepSizeX=1;} autoSkip = true; barThickness = Math.max(4, barThickness - 7); pointRadius = Math.max(3, pointRadius -2);}
+            if (interval === '24h') { if (granularity === 'hourly') stepSizeX = 2; if(granularity === '30min') stepSizeX = 60; minRotation = 30; }
+            else if (interval === '3days') { if (granularity === 'hourly') stepSizeX = 6; if(granularity === '30min') stepSizeX = 120; minRotation = 45; barThickness = Math.max(5, barThickness - 5); pointRadius = Math.max(3, pointRadius -1); }
+            else if (interval === '1week') { if (granularity === 'hourly' || granularity === 'shift') {timeUnit = 'day'; stepSizeX = 1;} autoSkip = true; barThickness = Math.max(4, barThickness - 7); pointRadius = Math.max(3, pointRadius -2);}
             else if (interval === '2weeks') { timeUnit = 'day'; if(granularity === 'hourly' || granularity === 'shift') stepSizeX=2; else stepSizeX=1; autoSkip = true; barThickness = Math.max(3, barThickness - 8); pointRadius = 3;}
             else if (interval === '1month') { timeUnit = 'week'; stepSizeX = 1; autoSkip = true; barThickness = Math.max(3, barThickness - 10); pointRadius = 3;}
-
 
             const timestamps = dataToDisplay.map(d => getTimestampFromDataPoint(d)).filter(ts => ts !== null);
             let minXDate = timestamps.length > 0 ? new Date(Math.min(...timestamps.map(ts => ts.getTime()))) : new Date();
             let maxXDate = timestamps.length > 0 ? new Date(Math.max(...timestamps.map(ts => ts.getTime()))) : new Date();
-
             if (interval === '24h' && timestamps.length > 0) { minXDate.setHours(0,0,0,0); maxXDate = new Date(minXDate); maxXDate.setHours(23,59,59,999); }
-            else if (timestamps.length > 0) { const pad = (interval === '1month'||interval === '2weeks')?24*2:(interval==='1week'?24:12); minXDate = new Date(minXDate.getTime()-(3600*1000*pad)); maxXDate = new Date(maxXDate.getTime()+(3600*1000*pad));}
-
+            else if (timestamps.length > 0) { const padH = (interval === '1month'||interval==='2weeks')?48:(interval==='1week'?24:12); minXDate = new Date(minXDate.getTime()-(3600*1000*padH)); maxXDate = new Date(maxXDate.getTime()+(3600*1000*padH));}
             let scalesOptions = { x: { type: 'time', time: { unit: timeUnit, tooltipFormat: tooltipFormat, displayFormats: { minute: 'HH:mm', hour: 'HH:mm', day: 'dd/MM', week: 'dd MMM', month: 'MMM yy'}}, min: minXDate.valueOf(), max: maxXDate.valueOf(), grid: {display:true,color:'rgba(200,200,200,0.2)',borderColor:'rgba(200,200,200,0.5)',borderDash:[2,3]}, ticks: {color:'#555',font:{size:10},autoSkip:autoSkip,minRotation:minRotation,maxRotation:maxRotation,source:'auto',stepSize:stepSizeX,padding:10}}, yTemp:{/*...*/}, yFC:{/*...*/}, yFR:{/*...*/}, yBP:{/*...*/} };
-            // Copiar escalas Y para brevedad, son iguales que antes
             scalesOptions.yTemp = { type: 'linear', position: 'left', display: true, min: parseFloat(document.getElementById('tempMin').value), max: parseFloat(document.getElementById('tempMax').value), title: { display: true, text: 'Temp (°C)', color: 'red', font:{weight:'bold'}}, ticks: { color: 'red', stepSize: 0.5 }, grid: { drawOnChartArea: false }};
             scalesOptions.yFC = { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('hrMin').value), max: parseFloat(document.getElementById('hrMax').value), title: { display: true, text: 'FC (lpm)', color: 'blue', font:{weight:'bold'}}, ticks: { color: 'blue', stepSize: 10 }, grid: { drawOnChartArea: false }};
             scalesOptions.yFR = { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('rrMin').value), max: parseFloat(document.getElementById('rrMax').value), title: { display: true, text: 'FR (rpm)', color: 'black', font:{weight:'bold'}}, ticks: { color: 'black', stepSize: 5 }, offset: true, grid: { drawOnChartArea: false }};
             scalesOptions.yBP = { type: 'linear', position: 'left', display: true, min: parseFloat(document.getElementById('bpMin').value), max: parseFloat(document.getElementById('bpMax').value), title: { display: true, text: 'TA (mmHg)', color: 'green', font:{weight:'bold'}}, ticks: { color: 'green', stepSize: 20 }, grid: { display: true, color: 'rgba(200,200,200,0.3)', borderColor: 'rgba(200,200,200,0.5)'}};
-
             if (vitalSignsChart) vitalSignsChart.destroy();
             vitalSignsChart = new Chart(ctxChart, { type: 'bar', data: { datasets: [ { label: 'Temperatura', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.temp})), borderColor: 'red', backgroundColor: 'red', type: 'line', pointStyle: 'circle', radius: pointRadius, hoverRadius: pointRadius + 2, tension: 0.1, yAxisID: 'yTemp', order: 1, spanGaps: true }, { label: 'Frec. Cardíaca', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.fc})), borderColor: 'blue', backgroundColor: 'blue', type: 'line', pointStyle: 'circle', radius: pointRadius, hoverRadius: pointRadius + 2, tension: 0.1, yAxisID: 'yFC', order: 2, spanGaps: true }, { label: 'Frec. Respiratoria', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.fr})), borderColor: 'black', backgroundColor: 'black', type: 'line', pointStyle: 'circle', radius: pointRadius, hoverRadius: pointRadius + 2, tension: 0.1, yAxisID: 'yFR', order: 3, spanGaps: true }, { label: 'Tensión Arterial', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: (d.tas && d.tad) ? [d.tad, d.tas] : null })), backgroundColor: 'rgba(46,204,113,0.7)', borderColor:'green', borderWidth:1, barThickness: barThickness, yAxisID: 'yBP', type:'bar', order:0}, { label: 'SatO₂', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.sato2})), hidden: true, yAxisID: 'yTemp' } ]}, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, stacked: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, filter: (item) => item.datasetIndex !== 4 }}, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.dataset.label === 'Tensión Arterial' && context.raw && Array.isArray(context.raw.y)) { label += `${context.raw.y[1]}/${context.raw.y[0]}`; } else if (context.parsed.y !== null && context.parsed.y !== undefined) { label += context.parsed.y; } else { label += '-';} return label; }}} }, scales: scalesOptions }, plugins: [customAnnotationsPlugin] });
-
-            const currentContainerWidth = chartContainer.offsetWidth;
-            let desiredCanvasWidth = currentContainerWidth;
-            const numDataPoints = dataToDisplay.length;
-            if (numDataPoints > 0 && currentContainerWidth > 0) {
-                let minPxPerSlot = 40; // Base para granularidad horaria
-                if (granularity === '30min') minPxPerSlot = 30;
-                else if (granularity === 'shift') minPxPerSlot = 60;
-                else if (granularity === 'daily') minPxPerSlot = 80;
-
-                let totalSlotsEstimate = numDataPoints; // Estimación inicial
-                if (interval === '24h') totalSlotsEstimate = (granularity === '30min') ? 48 : (granularity === 'hourly' ? 24 : (granularity === 'shift' ? 3 : 1));
-                else if (interval === '3days') totalSlotsEstimate = (granularity === '30min') ? 48*3 : (granularity === 'hourly' ? 24*3 : (granularity === 'shift' ? 3*3 : 3));
-                // Para rangos más largos, la estimación de slots es más compleja, usamos numDataPoints como proxy
-                
-                desiredCanvasWidth = Math.max(currentContainerWidth, totalSlotsEstimate * minPxPerSlot, numDataPoints * 20); // Asegurar un mínimo por punto real también
-            }
-            desiredCanvasWidth = Math.min(desiredCanvasWidth, 20000); // Límite superior muy alto
-            chartCanvas.style.width = (desiredCanvasWidth > currentContainerWidth + 20) ? `${desiredCanvasWidth}px` : '100%';
+            const currentContainerWidth = chartContainer.offsetWidth; let desiredCanvasWidth = currentContainerWidth; const numDataPoints = dataToDisplay.length;
+            if (numDataPoints > 0 && currentContainerWidth > 0) { let minPxPerSlot = 40; if (granularity === '30min') minPxPerSlot = 30; else if (granularity === 'shift') minPxPerSlot = 60; else if (granularity === 'daily') minPxPerSlot = 80; let totalSlotsEstimate = numDataPoints; if (interval === '24h') totalSlotsEstimate = (granularity === '30min') ? 48 : (granularity === 'hourly' ? 24 : (granularity === 'shift' ? 3 : 1)); else if (interval === '3days') totalSlotsEstimate = (granularity === '30min') ? 48*3 : (granularity === 'hourly' ? 24*3 : (granularity === 'shift' ? 3*3 : 3)); desiredCanvasWidth = Math.max(currentContainerWidth, totalSlotsEstimate * minPxPerSlot, numDataPoints * 20); }
+            desiredCanvasWidth = Math.min(desiredCanvasWidth, 20000); chartCanvas.style.width = (desiredCanvasWidth > currentContainerWidth + 20) ? `${desiredCanvasWidth}px` : '100%';
             if (vitalSignsChart && currentContainerWidth > 0) { setTimeout(() => vitalSignsChart.resize(), 0); }
         }
         
         applyScaleButton.addEventListener('click', () => { updateChartView(); alert("Escalas actualizadas. Vuelve al 'Dashboard Gráfico' para ver cambios."); });
-        function renderDataTable() { /* ... (sin cambios) ... */
+        function renderDataTable() { /* ... (Modificado para incluir Hora) ... */
             dataTableBody.innerHTML = ''; if (!patientData || patientData.length === 0) return;
             const sortedTableData = [...patientData].sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime(); });
-            sortedTableData.forEach(d => { const row = dataTableBody.insertRow(); let displayDate = '-'; if (d.fecha) { try { const dateParts = d.fecha.split('-'); const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) -1, parseInt(dateParts[2])); displayDate = localDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) {}} row.insertCell().textContent = displayDate; row.insertCell().textContent = d.turno || '-'; row.insertCell().textContent = d.temp !== undefined ? d.temp.toFixed(1) : '-'; row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined) ? `${d.tas}/${d.tad}` : '-'; row.insertCell().textContent = d.fc !== undefined ? d.fc : '-'; row.insertCell().textContent = d.fr !== undefined ? d.fr : '-'; row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-'; });
+            // Modificar cabecera de la tabla para incluir Hora
+            const dataTableHeader = document.querySelector('#dataTable thead tr');
+            if (dataTableHeader && dataTableHeader.children[1].textContent !== "Hora") { // Evitar duplicar si ya está
+                 const horaTh = document.createElement('th');
+                 horaTh.textContent = "Hora";
+                 dataTableHeader.insertBefore(horaTh, dataTableHeader.children[1]);
+            }
+
+            sortedTableData.forEach(d => {
+                const row = dataTableBody.insertRow(); let displayDate = '-';
+                if (d.fecha) { try { const dateParts = d.fecha.split('-'); const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) -1, parseInt(dateParts[2])); displayDate = localDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) {}}
+                row.insertCell().textContent = displayDate; 
+                row.insertCell().textContent = d.hora || '-'; // Mostrar hora
+                row.insertCell().textContent = d.turno || '-';
+                row.insertCell().textContent = d.temp !== undefined ? d.temp.toFixed(1) : '-';
+                row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined) ? `${d.tas}/${d.tad}` : '-';
+                row.insertCell().textContent = d.fc !== undefined ? d.fc : '-';
+                row.insertCell().textContent = d.fr !== undefined ? d.fr : '-';
+                row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-';
+            });
         }
         inputFecha.valueAsDate = new Date(); 
-        addDataButton.addEventListener('click', () => { /* ... (sin cambios) ... */
-            const fecha = inputFecha.value; const turno = inputTurno.value; if (!fecha) { alert("Introduce una fecha."); return; } const existingEntryIndex = patientData.findIndex(d => d.fecha === fecha && d.turno === turno); const newData = { fecha: fecha, turno: turno, temp: inputTemp.value ? parseFloat(inputTemp.value) : undefined, tas: inputTAS.value ? parseInt(inputTAS.value) : undefined, tad: inputTAD.value ? parseInt(inputTAD.value) : undefined, fc: inputFC.value ? parseInt(inputFC.value) : undefined, fr: inputFR.value ? parseInt(inputFR.value) : undefined, sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined, }; Object.keys(newData).forEach(key => newData[key] === undefined && delete newData[key]); if (existingEntryIndex > -1) { patientData[existingEntryIndex] = {...patientData[existingEntryIndex], ...newData}; alert("Registro actualizado."); } else { patientData.push(newData); } patientData.sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime(); }); updateChartView(); renderDataTable(); inputTemp.value = ''; inputTAS.value = ''; inputTAD.value = ''; inputFC.value = ''; inputFR.value = ''; inputSatO2.value = '';
+        addDataButton.addEventListener('click', () => {
+            const fecha = inputFecha.value; 
+            const horaMin = inputHoraMinutos.value; // Leer hora
+            const turno = inputTurno.value; 
+            if (!fecha) { alert("Introduce una fecha."); return; }
+            // Validar hora si se introduce
+            let horaParaGuardar = undefined;
+            if (horaMin) {
+                const hmParts = horaMin.split(':');
+                if (hmParts.length === 2 && !isNaN(parseInt(hmParts[0])) && !isNaN(parseInt(hmParts[1]))) {
+                    horaParaGuardar = horaMin;
+                } else {
+                    alert("Formato de hora inválido. Use HH:MM."); return;
+                }
+            }
+
+            const existingEntryIndex = patientData.findIndex(d => d.fecha === fecha && (horaParaGuardar ? d.hora === horaParaGuardar : d.turno === turno) );
+            const newData = { fecha: fecha, turno: turno,
+                hora: horaParaGuardar, // Guardar hora
+                temp: inputTemp.value ? parseFloat(inputTemp.value) : undefined,
+                tas: inputTAS.value ? parseInt(inputTAS.value) : undefined, tad: inputTAD.value ? parseInt(inputTAD.value) : undefined,
+                fc: inputFC.value ? parseInt(inputFC.value) : undefined, fr: inputFR.value ? parseInt(inputFR.value) : undefined,
+                sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined,
+            };
+            Object.keys(newData).forEach(key => newData[key] === undefined && delete newData[key]);
+            if (existingEntryIndex > -1) { patientData[existingEntryIndex] = {...patientData[existingEntryIndex], ...newData}; alert("Registro actualizado."); }
+            else { patientData.push(newData); }
+            patientData.sort((a,b) => { const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b); if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime(); });
+            updateChartView(); renderDataTable();
+            inputTemp.value = ''; inputTAS.value = ''; inputTAD.value = ''; inputFC.value = ''; inputFR.value = ''; inputSatO2.value = ''; inputHoraMinutos.value = '';
         });
 
         // --- Inicialización ---
@@ -551,4 +577,3 @@
     </script>
 </body>
 </html>
-
