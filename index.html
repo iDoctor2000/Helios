@@ -102,7 +102,7 @@
             overflow-x: auto; /* Clave para el scroll horizontal */
         }
         #vitalSignsChart {
-             min-height: 100%;
+             min-height: 100%; /* Asegura que el canvas ocupe la altura definida */
         }
 
         .interval-selector-container {
@@ -134,8 +134,15 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
+        
+        /* Contenedor general para las vistas principales */
+        .view-container {
+            width: 100%;
+            max-width: 1300px; /* Ancho máximo del contenido */
+            margin: 0 auto; /* Centrar el contenido */
+        }
 
-        .config-section, .data-input-section {
+        .config-section, .data-input-section { /* Estilos para las secciones dentro de las vistas */
             margin-top: 2rem;
             padding: 1.75rem;
             background-color: white;
@@ -150,13 +157,7 @@
             border-bottom: 1px solid #e5e7eb;
             padding-bottom: 0.75rem;
         }
-         /* Contenedor general para las vistas principales */
-        .view-container {
-            width: 100%;
-            max-width: 1300px;
-            margin: 0 auto;
-        }
-
+        
         .grid-form {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -348,31 +349,27 @@
 
     <script>
         // --- Datos Globales y Estado ---
-        let patientData = [ 
-            { fecha: "2024-08-01", turno: "M", temp: 36.5, tas: 120, tad: 80, fc: 70, fr: 16, sato2: 98 },
-            { fecha: "2024-08-01", turno: "T", temp: 37.0, tas: 122, tad: 81, fc: 75, fr: 18, sato2: 97 },
-            { fecha: "2024-08-01", turno: "N", temp: 36.9, tas: 121, tad: 79, fc: 72, fr: 17, sato2: 98 },
-            { fecha: "2024-08-02", turno: "M", temp: 36.8, tas: 118, tad: 78, fc: 68, fr: 15, sato2: 99 },
-            // ... (más datos para probar scroll, ej. hasta completar un mes)
-        ];
-        // Generar más datos de ejemplo para un mes
-        const startDate = new Date("2024-08-03");
-        for (let i = 0; i < 28; i++) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + i);
+        let patientData = []; // Iniciar vacío, se llenará con ejemplos o carga CSV
+        
+        // Generar datos de ejemplo para un mes para pruebas
+        const exampleStartDate = new Date("2024-08-01"); // Puedes cambiar esta fecha base
+        for (let i = 0; i < 30; i++) { // Generar datos para 30 días
+            const currentDate = new Date(exampleStartDate);
+            currentDate.setDate(exampleStartDate.getDate() + i);
             const dateStr = currentDate.toISOString().split('T')[0];
             const turnos = ['M', 'T', 'N'];
             turnos.forEach(turno => {
                 patientData.push({
                     fecha: dateStr, turno: turno, 
-                    temp: (36.0 + Math.random() * 1.5).toFixed(1), 
-                    tas: Math.floor(110 + Math.random() * 20), tad: Math.floor(70 + Math.random() * 15),
-                    fc: Math.floor(60 + Math.random() * 30), fr: Math.floor(12 + Math.random() * 8),
-                    sato2: Math.floor(95 + Math.random() * 4)
+                    temp: parseFloat((36.0 + Math.random() * 1.5).toFixed(1)), 
+                    tas: Math.floor(110 + Math.random() * 20), 
+                    tad: Math.floor(70 + Math.random() * 15),
+                    fc: Math.floor(60 + Math.random() * 40), // Rango de FC un poco más amplio
+                    fr: Math.floor(12 + Math.random() * 10), // Rango de FR un poco más amplio
+                    sato2: Math.floor(94 + Math.random() * 5) // Rango de SatO2
                 });
             });
         }
-
 
         let vitalSignsChart;
         let isSidebarCollapsed = false;
@@ -384,10 +381,10 @@
         
         const showDashboardLink = document.getElementById('showDashboardLink');
         const showSettingsLink = document.getElementById('showSettingsLink');
-        const openCsvUploaderBtn = document.getElementById('openCsvUploader'); // Ya existe
+        const openCsvUploaderBtn = document.getElementById('openCsvUploader');
 
         // --- Elementos del DOM (Dashboard) ---
-        const chartContainer = document.getElementById('chartContainer'); // Añadido para acceso global
+        const chartContainer = document.getElementById('chartContainer');
         const timeIntervalSelector = document.getElementById('timeIntervalSelector');
         const inputFecha = document.getElementById('inputFecha');
         const inputTurno = document.getElementById('inputTurno');
@@ -399,7 +396,7 @@
         const inputSatO2 = document.getElementById('inputSatO2');
         const addDataButton = document.getElementById('addDataButton');
         const dataTableBody = document.querySelector('#dataTable tbody');
-        const applyScaleButton = document.getElementById('applyScaleConfig'); // Se moverá con su sección
+        const applyScaleButton = document.getElementById('applyScaleConfig');
 
         // --- Elementos del DOM (Sidebar y Modal CSV) ---
         const sidebar = document.getElementById('sidebar');
@@ -419,7 +416,6 @@
         function showMainView(viewToShow) {
             dashboardView.style.display = 'none';
             settingsView.style.display = 'none';
-            // El modal CSV se maneja independientemente
 
             if (viewToShow === 'dashboard') dashboardView.style.display = 'block';
             else if (viewToShow === 'settings') settingsView.style.display = 'block';
@@ -429,7 +425,7 @@
             e.preventDefault();
             setActiveLink(showDashboardLink);
             showMainView('dashboard');
-            setTimeout(() => { // Dar tiempo al DOM para actualizarse antes de redimensionar
+            setTimeout(() => {
                 if (vitalSignsChart && chartContainer.offsetWidth > 0) {
                     vitalSignsChart.resize();
                 }
@@ -444,8 +440,22 @@
         
         openCsvUploaderBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // No es necesario cambiar el link activo para un modal
+            // No es necesario cambiar el link activo para un modal, pero sí asegurarse que el modal se muestra.
             csvUploaderModal.style.display = 'flex';
+        });
+
+        closeCsvModal.addEventListener('click', () => {
+            csvUploaderModal.style.display = 'none';
+            messageAreaModal.style.display = 'none'; // También oculta el área de mensaje
+            messageAreaModal.textContent = '';      // Limpia el texto del mensaje
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === csvUploaderModal) {
+                csvUploaderModal.style.display = 'none';
+                messageAreaModal.style.display = 'none'; // También oculta el área de mensaje
+                messageAreaModal.textContent = '';      // Limpia el texto del mensaje
+            }
         });
 
         // --- Lógica de Sidebar (Menú Hamburguesa) ---
@@ -456,9 +466,9 @@
             menuToggle.style.left = isSidebarCollapsed ? '1.25rem' : `calc(260px + 1.25rem)`;
             setTimeout(() => {
                 if (vitalSignsChart && chartContainer.offsetWidth > 0) vitalSignsChart.resize();
-            }, 350); // Tiempo de transición del sidebar
+            }, 350);
         });
-        menuToggle.style.left = `calc(260px + 1.25rem)`; // Posición inicial
+        menuToggle.style.left = `calc(260px + 1.25rem)`;
 
         function setActiveLink(activeLink) {
             document.querySelectorAll('#sidebar nav ul li a').forEach(link => link.classList.remove('active'));
@@ -466,18 +476,13 @@
         }
         
         // --- Lógica del Cargador de CSV (Modal) ---
-        // ... (sin cambios significativos en esta lógica, solo asegurar que llama a updateChartView)
         dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropZone.classList.remove('dragover');
+            event.preventDefault(); dropZone.classList.remove('dragover');
             const files = event.dataTransfer.files;
-            if (files.length > 0 && files[0].name.endsWith('.csv')) {
-                handleLocalCsvFile(files[0]);
-            } else {
-                showMessageInModal('Por favor, suelta un archivo CSV.', 'error');
-            }
+            if (files.length > 0 && files[0].name.endsWith('.csv')) handleLocalCsvFile(files[0]);
+            else showMessageInModal('Por favor, suelta un archivo CSV.', 'error');
         });
         dropZone.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', (event) => {
@@ -496,9 +501,7 @@
                 if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const csvContent = await response.text();
                 processAndDisplayCsvData(csvContent, `URL: ${new URL(url).hostname}`);
-            } catch (error) {
-                showMessageInModal(`Error al cargar desde URL: ${error.message}`, 'error');
-            }
+            } catch (error) { showMessageInModal(`Error al cargar desde URL: ${error.message}`, 'error'); }
         });
 
         function handleLocalCsvFile(file) {
@@ -513,13 +516,12 @@
             try {
                 const { data, headers } = parseGenericCsv(csvContent); 
                 if (data.length === 0) {
-                    showMessageInModal(`CSV de '${sourceName}' vacío o sin datos válidos.`, 'error');
-                    return;
+                    showMessageInModal(`CSV de '${sourceName}' vacío o sin datos válidos.`, 'error'); return;
                 }
                 displayCsvDataInModal(data, headers); 
                 transformAndSetGlobalPatientData(data, headers, sourceName); 
             } catch (error) {
-                console.error("Error en processAndDisplayCsvData:", error)
+                console.error("Error en processAndDisplayCsvData:", error);
                 showMessageInModal(`Error procesando CSV de '${sourceName}': ${error.message}`, 'error');
             }
         }
@@ -527,25 +529,19 @@
         function parseGenericCsv(csvText) { 
             const lines = csvText.trim().split(/\r\n|\n/);
             if (lines.length === 0) return { data: [], headers: [] };
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase()); // Convertir a minúsculas para consistencia
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             const data = lines.slice(1).map(line => {
                 const values = line.split(',').map(v => v.trim());
                 if (values.length === headers.length) {
-                    return headers.reduce((obj, header, i) => {
-                        obj[header] = values[i];
-                        return obj;
-                    }, {});
-                }
-                return null; 
+                    return headers.reduce((obj, header, i) => { obj[header] = values[i]; return obj; }, {});
+                } return null; 
             }).filter(row => row !== null);
             return { data, headers };
         }
 
         function transformAndSetGlobalPatientData(parsedCsvData, csvHeaders, sourceNameForMessage = "CSV") {
-             const keyMap = { // Usar cabeceras en minúsculas consistentemente
-                fecha: ['fecha', 'date', 'timestamp'],
-                hora: ['hora', 'time'],
-                turno: ['turno', 'shift'], // Añadido por si viene 'turno' directamente
+             const keyMap = {
+                fecha: ['fecha', 'date', 'timestamp'], hora: ['hora', 'time'], turno: ['turno', 'shift'],
                 temp: ['temp', 'temperatura', 'temperature', 't', 't (°c)'],
                 tas: ['tas', 'sistolica', 'systolic', 'ta sistolica', 'tas (mmhg)'],
                 tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica', 'tad (mmhg)'],
@@ -553,46 +549,33 @@
                 fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate', 'fr (rpm)'],
                 sato2: ['sato2', 'saturacion', 'saturation', 'spo2', 'sato2 (%)']
             };
-
-            // csvHeaders ya están en minúsculas por parseGenericCsv
             const findHeader = (possibleNames) => {
-                for (const name of possibleNames) {
-                    if (csvHeaders.includes(name)) return name;
-                }
-                return null; // Devolver null si no se encuentra
+                for (const name of possibleNames) { if (csvHeaders.includes(name)) return name; } return null;
             };
-
-
             const transformed = parsedCsvData.map(row => {
                 const newEntry = {};
-                
                 const fechaHeader = findHeader(keyMap.fecha);
                 if (fechaHeader && row[fechaHeader] !== undefined && row[fechaHeader] !== '') {
                     try {
-                        let d;
-                        // Intentar normalizar DD/MM/YYYY o DD-MM-YYYY a YYYY-MM-DD
-                        const dateMatch = String(row[fechaHeader]).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-                        if (dateMatch) { // DD/MM/YYYY
-                            d = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`);
-                        } else { // Intentar parseo directo (YYYY-MM-DD o formatos aceptados por Date)
-                            d = new Date(row[fechaHeader]);
-                        }
+                        let d; const dateVal = String(row[fechaHeader]);
+                        const dateMatchDMY = dateVal.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                        const dateMatchYMD = dateVal.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                        if (dateMatchDMY) d = new Date(parseInt(dateMatchDMY[3]), parseInt(dateMatchDMY[2]) - 1, parseInt(dateMatchDMY[1]));
+                        else if (dateMatchYMD) d = new Date(parseInt(dateMatchYMD[1]), parseInt(dateMatchYMD[2]) - 1, parseInt(dateMatchYMD[3]));
+                        else d = new Date(dateVal);
                         if (isNaN(d.getTime())) throw new Error('Invalid date');
                         newEntry.fecha = d.toISOString().split('T')[0];
-                    } catch { return null; }
-                } else { return null; }
+                    } catch { console.warn(`Fecha inválida: ${row[fechaHeader]}`); return null; }
+                } else { console.warn("Fila sin fecha:", row); return null; }
 
-                // Intentar obtener turno: primero desde columna 'turno', luego 'hora'
                 let turnoDefinido = false;
                 const turnoHeader = findHeader(keyMap.turno);
                 if (turnoHeader && row[turnoHeader] && ['M','T','N'].includes(String(row[turnoHeader]).toUpperCase())) {
-                    newEntry.turno = String(row[turnoHeader]).toUpperCase();
-                    turnoDefinido = true;
+                    newEntry.turno = String(row[turnoHeader]).toUpperCase(); turnoDefinido = true;
                 } else {
                     const horaHeader = findHeader(keyMap.hora);
                     if (horaHeader && row[horaHeader] !== undefined && row[horaHeader] !== '') {
-                        const horaStr = String(row[horaHeader]);
-                        const hourMatch = horaStr.match(/^(\d{1,2})/); 
+                        const horaStr = String(row[horaHeader]); const hourMatch = horaStr.match(/^(\d{1,2})/); 
                         if (hourMatch) {
                             const hour = parseInt(hourMatch[1], 10);
                             if (hour >= 7 && hour < 14) newEntry.turno = 'M';
@@ -602,7 +585,7 @@
                         }
                     }
                 }
-                if (!turnoDefinido) return null; // Si no se puede determinar el turno, descartar
+                if (!turnoDefinido) { console.warn("Fila sin turno:", row); return null; }
                 
                 ['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].forEach(internalKey => {
                     const headerKey = findHeader(keyMap[internalKey]);
@@ -615,31 +598,35 @@
             }).filter(entry => entry !== null); 
 
             transformed.sort((a, b) => {
-                const tsA = getTimestampFromDataPoint(a);
-                const tsB = getTimestampFromDataPoint(b);
+                const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b);
                 if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1;
                 return tsA.getTime() - tsB.getTime();
             });
             patientData = transformed; 
 
             if (patientData.length > 0) {
-                showMessageInModal(`Datos de '${sourceNameForMessage}' procesados. Puedes cerrar esta ventana.`, 'success');
-                updateChartView(); 
-                renderDataTable();
+                showMessageInModal(`Datos de '${sourceNameForMessage}' procesados y aplicados. El gráfico y la tabla han sido actualizados. Este diálogo se cerrará en 4 segundos.`, 'success');
+                updateChartView(); renderDataTable();
+                setTimeout(() => {
+                    csvUploaderModal.style.display = 'none';
+                    messageAreaModal.style.display = 'none'; messageAreaModal.textContent = '';
+                }, 4000); 
             } else {
                 showMessageInModal(`No se pudieron transformar datos válidos del CSV de '${sourceNameForMessage}'. Verifica el formato y las cabeceras.`, 'error');
                 if (vitalSignsChart) vitalSignsChart.destroy();
                 const chartCanvas = document.getElementById('vitalSignsChart');
-                const ctxChart = chartCanvas.getContext('2d');
-                ctxChart.clearRect(0,0,chartCanvas.width, chartCanvas.height);
-                ctxChart.fillText("No se pudieron cargar datos válidos.", chartCanvas.width / 2, chartCanvas.height / 2);
+                if(chartCanvas){
+                    const ctxChart = chartCanvas.getContext('2d');
+                    ctxChart.clearRect(0,0,chartCanvas.width, chartCanvas.height);
+                    ctxChart.font = "16px Inter"; ctxChart.fillStyle = "#555"; ctxChart.textAlign = "center";
+                    ctxChart.fillText("No se pudieron cargar datos válidos.", chartCanvas.width / 2, chartCanvas.height / 2);
+                }
                 dataTableBody.innerHTML = '';
             }
         }
 
         function displayCsvDataInModal(data, headers) {
-            csvHeaderRowModal.innerHTML = ''; csvBodyModal.innerHTML = '';
-            if (data.length === 0) return;
+            csvHeaderRowModal.innerHTML = ''; csvBodyModal.innerHTML = ''; if (data.length === 0) return;
             headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; csvHeaderRowModal.appendChild(th); });
             data.slice(0, 30).forEach(row => { 
                 const tr = csvBodyModal.insertRow();
@@ -656,9 +643,7 @@
         function getTimestampFromDataPoint(dataEntry) {
             if (!dataEntry || !dataEntry.fecha || !dataEntry.turno) return null;
             const [year, month, day] = dataEntry.fecha.split('-').map(Number);
-            let hour = 8; // M: 08:00
-            if (dataEntry.turno === 'T') hour = 14; // T: 14:00
-            else if (dataEntry.turno === 'N') hour = 20; // N: 20:00
+            let hour = 8; if (dataEntry.turno === 'T') hour = 14; else if (dataEntry.turno === 'N') hour = 20;
             return new Date(year, month - 1, day, hour, 0);
         }
         
@@ -666,30 +651,19 @@
             if (!data || data.length === 0) return [];
             const sortedData = [...data].sort((a, b) => {
                 const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b);
-                if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1;
-                return tsA.getTime() - tsB.getTime();
+                if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime();
             });
-
             if (sortedData.length === 0) return [];
             const lastDataPoint = sortedData[sortedData.length - 1];
             let latestDateFull = getTimestampFromDataPoint(lastDataPoint) || new Date();
-            
-            let viewEndDate = new Date(latestDateFull); 
-            viewEndDate.setHours(23, 59, 59, 999);
-            let startDate = new Date(latestDateFull); 
-            startDate.setHours(0,0,0,0); 
-
+            let viewEndDate = new Date(latestDateFull); viewEndDate.setHours(23, 59, 59, 999);
+            let startDate = new Date(latestDateFull); startDate.setHours(0,0,0,0); 
             switch (interval) {
                 case '24h': break; 
                 case '3days': startDate.setDate(startDate.getDate() - 2); break;
                 case '1week': startDate.setDate(startDate.getDate() - 6); break;
                 case '2weeks': startDate.setDate(startDate.getDate() - 13); break;
-                case '1month': 
-                    const targetMonthDate = new Date(startDate);
-                    targetMonthDate.setMonth(targetMonthDate.getMonth() - 1);
-                    // Si el día no existe (e.g. 31 de un mes corto), Date lo ajusta al último día del mes anterior
-                    startDate = targetMonthDate;
-                    break;
+                case '1month': const targetMDate = new Date(startDate); targetMDate.setMonth(targetMDate.getMonth() - 1); startDate = targetMDate; break;
             }
             return sortedData.filter(d => {
                 const timestamp = getTimestampFromDataPoint(d);
@@ -705,43 +679,28 @@
             createChart(currentlyDisplayedData, selectedInterval);
         }
         
-        const customAnnotationsPlugin = { /* ... (como en la respuesta anterior, sin cambios drásticos aquí) ... */ 
+        const customAnnotationsPlugin = { 
             id: 'customAnnotations',
             afterDatasetsDraw: (chart) => {
                 const { ctx, data, chartArea: { top, bottom, left, right }, scales } = chart;
                 if (!currentlyDisplayedData || currentlyDisplayedData.length === 0 || !chart.data.datasets[0] || chartContainer.offsetWidth === 0) return;
-                
                 ctx.save(); ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
-
                 currentlyDisplayedData.forEach((pData) => {
-                    const pDataTimestamp = getTimestampFromDataPoint(pData);
-                    if (!pDataTimestamp) return;
-
-                    const chartDataIndex = chart.data.datasets[0].data.findIndex(
-                        dp => dp && dp.x && dp.x.getTime && dp.x.getTime() === pDataTimestamp.getTime()
-                    );
+                    const pDataTimestamp = getTimestampFromDataPoint(pData); if (!pDataTimestamp) return;
+                    const chartDataIndex = chart.data.datasets[0].data.findIndex(dp => dp && dp.x && dp.x.getTime && dp.x.getTime() === pDataTimestamp.getTime());
                     if (chartDataIndex === -1) return; 
-                    const meta = chart.getDatasetMeta(0); 
-                    if (!meta.data || !meta.data[chartDataIndex]) return;
+                    const meta = chart.getDatasetMeta(0); if (!meta.data || !meta.data[chartDataIndex]) return;
                     const xPos = meta.data[chartDataIndex].x;
-                    
-                    if (pData.sato2 !== undefined && pData.sato2 !== null) {
+                    if (pData.sato2 !== undefined && pData.sato2 !== null) { 
                         ctx.fillStyle = '#1f2937'; let yAnchor = top + 20; 
                         const tempDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Temperatura');
                         if (tempDatasetIndex !== -1) {
                             const tempMeta = chart.getDatasetMeta(tempDatasetIndex);
                             const tempPointEl = tempMeta.data[chartDataIndex];
-                            if (tempPointEl && tempPointEl.active !== false && tempPointEl.parsed && tempPointEl.parsed.y !== null) {
-                                yAnchor = tempPointEl.y - 15;
-                            } else if (pData.tas !== undefined) {
-                                const bpScale = scales.yBP; if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
-                            }
-                        } else if (pData.tas !== undefined) {
-                             const bpScale = scales.yBP; if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
-                        }
-                        if (xPos >= left && xPos <= right && yAnchor > top - 10 && yAnchor < bottom + 20) { 
-                            ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top + 5, Math.min(yAnchor, bottom + 5))); 
-                        }
+                            if (tempPointEl && tempPointEl.parsed && tempPointEl.parsed.y !== null) yAnchor = tempPointEl.y - 15;
+                            else if (pData.tas !== undefined) { const bpScale = scales.yBP; if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;}
+                        } else if (pData.tas !== undefined) { const bpScale = scales.yBP; if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;}
+                        if (xPos >= left && xPos <= right && yAnchor > top -10 && yAnchor < bottom + 20) ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top + 5, Math.min(yAnchor, bottom + 5))); 
                     }
                     ['Temperatura', 'Frec. Cardíaca', 'Frec. Respiratoria'].forEach(label => {
                         const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === label);
@@ -761,12 +720,10 @@
             const chartCanvas = document.getElementById('vitalSignsChart');
             const ctxChart = chartCanvas.getContext('2d');
 
-            if (chartContainer.offsetWidth === 0) { // Si el contenedor no es visible, no renderizar
-                if (vitalSignsChart) vitalSignsChart.destroy(); // Destruir instancia anterior
-                console.warn("Contenedor del gráfico no visible. El gráfico se renderizará al mostrarse.");
-                return;
+            if (chartContainer.offsetWidth === 0) { 
+                if (vitalSignsChart) vitalSignsChart.destroy(); 
+                console.warn("Contenedor del gráfico no visible. El gráfico se renderizará al mostrarse."); return;
             }
-
             if (!dataToDisplay || dataToDisplay.length === 0) {
                 if (vitalSignsChart) vitalSignsChart.destroy();
                 ctxChart.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
@@ -776,32 +733,33 @@
             }
             
             let timeUnit = 'hour'; let tooltipFormat = 'dd/MM HH:mm'; let minRotation = 0; let maxRotation = 50; let autoSkip = true; let stepSizeX = undefined;
-
             switch (interval) {
-                case '24h': timeUnit = 'hour'; tooltipFormat = 'HH:mm dd/MM'; minRotation = 30; stepSizeX = 2; break;
-                case '3days': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; minRotation = 0; autoSkip = dataToDisplay.length > (3*3*2) ; break; // Mas de 2 dias con 3 turnos
-                case '1week': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; autoSkip = dataToDisplay.length > (7*3*1.5); break;
+                case '24h': timeUnit = 'hour'; tooltipFormat = 'HH:mm dd/MM'; minRotation = 30; stepSizeX = 2; autoSkip = false; break;
+                case '3days': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; minRotation = 0; autoSkip = dataToDisplay.length > 18; break;
+                case '1week': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; autoSkip = dataToDisplay.length > 30; break;
                 case '2weeks': timeUnit = 'day'; tooltipFormat = "dd MMM"; autoSkip = true; break; 
                 case '1month': timeUnit = 'week'; tooltipFormat = "dd MMM"; autoSkip = true; break;
             }
             
             const timestamps = dataToDisplay.map(d => getTimestampFromDataPoint(d)).filter(ts => ts !== null);
-            let minDate = timestamps.length > 0 ? new Date(Math.min(...timestamps.map(ts => ts.getTime()))) : new Date();
-            let maxDate = timestamps.length > 0 ? new Date(Math.max(...timestamps.map(ts => ts.getTime()))) : new Date();
+            let minXDate = timestamps.length > 0 ? new Date(Math.min(...timestamps.map(ts => ts.getTime()))) : new Date();
+            let maxXDate = timestamps.length > 0 ? new Date(Math.max(...timestamps.map(ts => ts.getTime()))) : new Date();
 
             if (interval === '24h' && timestamps.length > 0) {
-                minDate.setHours(0,0,0,0); maxDate = new Date(minDate); maxDate.setHours(23,59,59,999);
-            } else if (timestamps.length > 0) {
-                 minDate = new Date(minDate.getTime() - 3600*1000* (interval === '3days' || interval === '1week' ? 6 : 1) ); 
-                 maxDate = new Date(maxDate.getTime() + 3600*1000* (interval === '3days' || interval === '1week' ? 6 : 1) ); 
+                minXDate.setHours(0,0,0,0); maxXDate = new Date(minXDate); maxXDate.setHours(23,59,59,999);
+            } else if (timestamps.length > 0) { 
+                const padding = (interval === '1month' || interval === '2weeks') ? (3600*1000*24) : (3600*1000*6); 
+                minXDate = new Date(minXDate.getTime() - padding); 
+                maxXDate = new Date(maxXDate.getTime() + padding); 
             }
 
-            let scalesOptions = { /* ... (definición de escalas Y como antes) ... */
+            let scalesOptions = {
                 x: {
                     type: 'time', time: { unit: timeUnit, tooltipFormat: tooltipFormat, displayFormats: { hour: 'HH:mm', day: 'dd/MM', week: 'dd MMM', month: 'MMM yy'}},
-                    min: minDate.valueOf(), max: maxDate.valueOf(),
+                    min: minXDate.valueOf(), max: maxXDate.valueOf(),
                     grid: { display: true, color: 'rgba(200,200,200,0.2)', borderColor: 'rgba(200,200,200,0.5)', borderDash: [2,3]},
-                    ticks: { color: '#555', font: {size: 10}, autoSkip: autoSkip, minRotation: minRotation, maxRotation: maxRotation, source: 'auto', stepSize: stepSizeX }
+                    ticks: { color: '#555', font: {size: 10}, autoSkip: autoSkip, minRotation: minRotation, maxRotation: maxRotation, source: 'auto', stepSize: stepSizeX,
+                             padding: 10 }
                 },
                 yTemp: { type: 'linear', position: 'left', display: true, min: parseFloat(document.getElementById('tempMin').value), max: parseFloat(document.getElementById('tempMax').value), title: { display: true, text: 'Temp (°C)', color: 'red', font:{weight:'bold'}}, ticks: { color: 'red', stepSize: 0.5 }, grid: { drawOnChartArea: false }},
                 yFC: { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('hrMin').value), max: parseFloat(document.getElementById('hrMax').value), title: { display: true, text: 'FC (lpm)', color: 'blue', font:{weight:'bold'}}, ticks: { color: 'blue', stepSize: 10 }, grid: { drawOnChartArea: false }},
@@ -811,7 +769,7 @@
 
             if (vitalSignsChart) vitalSignsChart.destroy();
             
-            vitalSignsChart = new Chart(ctxChart, { /* ... (configuración del gráfico como antes, usando dataToDisplay y scalesOptions) ... */
+            vitalSignsChart = new Chart(ctxChart, {
                 type: 'bar', 
                 data: {
                     datasets: [
@@ -826,7 +784,7 @@
                     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, stacked: false,
                     plugins: {
                         legend: { position: 'bottom', labels: { usePointStyle: true, filter: (item) => item.datasetIndex !== 4 }},
-                        tooltip: { callbacks: { label: function(context) { /* ... */ 
+                        tooltip: { callbacks: { label: function(context) { 
                             let label = context.dataset.label || ''; if (label) label += ': ';
                             if (context.dataset.label === 'Tensión Arterial' && context.raw && Array.isArray(context.raw.y)) { label += `${context.raw.y[1]}/${context.raw.y[0]}`; }
                             else if (context.parsed.y !== null && context.parsed.y !== undefined) { label += context.parsed.y; } else { label += '-';} return label;
@@ -837,33 +795,31 @@
                 plugins: [customAnnotationsPlugin]
             });
 
-            // Lógica para el scroll horizontal
             const currentContainerWidth = chartContainer.offsetWidth;
             let desiredCanvasWidth = currentContainerWidth;
             const numDataPoints = dataToDisplay.length;
             
-            let minWidthPerDataPoint = 30; // px por punto de dato base
-            if (numDataPoints > 0) {
-                if (interval === '1month' && numDataPoints > 60) minWidthPerDataPoint = 20; // Muchos datos, más apretado
-                else if (interval === '2weeks' && numDataPoints > 30) minWidthPerDataPoint = 25;
-                else if (interval === '1week' && numDataPoints > 15) minWidthPerDataPoint = 40;
-                else if (interval === '3days') minWidthPerDataPoint = 50;
-                else if (interval === '24h') minWidthPerDataPoint = 60; // Pocos datos, más espacio
+            if (numDataPoints > 0 && currentContainerWidth > 0) {
+                let minWidthPerDataPoint = 30; 
+                if (interval === '1month') minWidthPerDataPoint = (numDataPoints > 60 ? 25 : 30);
+                else if (interval === '2weeks') minWidthPerDataPoint = (numDataPoints > 30 ? 30 : 35);
+                else if (interval === '1week') minWidthPerDataPoint = (numDataPoints > 15 ? 40 : 50);
+                else if (interval === '3days') minWidthPerDataPoint = 60;
+                else if (interval === '24h') minWidthPerDataPoint = Math.max(70, currentContainerWidth / (numDataPoints || 1));
                 
                 desiredCanvasWidth = Math.max(currentContainerWidth, numDataPoints * minWidthPerDataPoint);
             }
             
-            desiredCanvasWidth = Math.min(desiredCanvasWidth, 12000); // Limitar ancho máximo
+            desiredCanvasWidth = Math.min(desiredCanvasWidth, 12000); 
 
-            if (desiredCanvasWidth > currentContainerWidth + 10) { // Solo si es significativamente mayor
+            if (desiredCanvasWidth > currentContainerWidth + 20) { 
                 chartCanvas.style.width = desiredCanvasWidth + 'px';
             } else {
                 chartCanvas.style.width = '100%';
             }
             
-            // Forzar un resize después de cambiar el estilo del canvas, si es visible
             if (vitalSignsChart && currentContainerWidth > 0) {
-                 setTimeout(() => vitalSignsChart.resize(), 0); // En el siguiente ciclo de eventos
+                 setTimeout(() => vitalSignsChart.resize(), 0); 
             }
         }
         
@@ -872,10 +828,9 @@
             alert("Escalas actualizadas. Vuelve al 'Dashboard Gráfico' para ver los cambios si estás en la vista de configuración.");
         });
 
-        function renderDataTable() { /* ... (sin cambios significativos) ... */
-            dataTableBody.innerHTML = '';
-            if (!patientData || patientData.length === 0) { return; }
-            const sortedTableData = [...patientData].sort((a,b) => { /* ... */
+        function renderDataTable() {
+            dataTableBody.innerHTML = ''; if (!patientData || patientData.length === 0) return;
+            const sortedTableData = [...patientData].sort((a,b) => {
                 const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b);
                 if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime();
             });
@@ -893,7 +848,7 @@
         
         inputFecha.valueAsDate = new Date(); 
 
-        addDataButton.addEventListener('click', () => { /* ... (como antes, asegurar que llama a updateChartView y renderDataTable) ... */
+        addDataButton.addEventListener('click', () => {
             const fecha = inputFecha.value; const turno = inputTurno.value; if (!fecha) { alert("Introduce una fecha."); return; }
             const existingEntryIndex = patientData.findIndex(d => d.fecha === fecha && d.turno === turno);
             const newData = { fecha: fecha, turno: turno,
@@ -905,15 +860,16 @@
             Object.keys(newData).forEach(key => newData[key] === undefined && delete newData[key]);
             if (existingEntryIndex > -1) { patientData[existingEntryIndex] = {...patientData[existingEntryIndex], ...newData}; alert("Registro actualizado."); }
             else { patientData.push(newData); }
-            patientData.sort((a,b) => { /* ... */
+            patientData.sort((a,b) => {
                 const tsA = getTimestampFromDataPoint(a); const tsB = getTimestampFromDataPoint(b);
                 if (!tsA && !tsB) return 0; if (!tsA) return 1; if (!tsB) return -1; return tsA.getTime() - tsB.getTime();
             });
             updateChartView(); renderDataTable();
+            inputTemp.value = ''; inputTAS.value = ''; inputTAD.value = ''; inputFC.value = ''; inputFR.value = ''; inputSatO2.value = '';
         });
 
         // --- Inicialización al Cargar la Página ---
-        showMainView('dashboard'); // Mostrar dashboard por defecto
+        showMainView('dashboard'); 
         setActiveLink(showDashboardLink);
         updateChartView(); 
         renderDataTable();
