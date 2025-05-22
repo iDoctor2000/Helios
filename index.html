@@ -1,232 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Integrada de Constantes Vitales</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Color de fondo general */
-            color: #333;
-            margin: 0;
+        /* ... (your existing styles) ... */
+
+        /* Style for the interval selector */
+        .interval-selector-container {
+            margin-top: 1rem; /* Space above the selector */
+            margin-bottom: 1.5rem; /* Space below the selector */
+            padding: 1rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
             display: flex;
-            min-height: 100vh;
+            align-items: center;
+            gap: 0.75rem;
         }
-        /* Sidebar */
-        #sidebar {
-            width: 260px; /* Ancho del sidebar */
-            background-color: #1f2937; /* Tailwind gray-800 */
-            color: #f3f4f6;
-            padding: 1.5rem;
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(0);
-            z-index: 40;
-            position: fixed;
-            height: 100%;
-            overflow-y: auto;
-        }
-        #sidebar.collapsed {
-            transform: translateX(-100%);
-        }
-        #sidebar h2 {
-            font-size: 1.6rem; /* Tamaño del título del sidebar */
-            font-weight: 700;
-            margin-bottom: 2rem;
-            text-align: center;
-            color: #e5e7eb; /* Color del título del sidebar */
-        }
-        #sidebar ul { list-style: none; padding: 0; }
-        #sidebar ul li a {
-            display: flex; /* Para alinear icono y texto */
-            align-items: center; /* Centrar verticalmente */
-            padding: 0.85rem 1rem; /* Padding de los enlaces */
-            color: #d1d5db;
-            text-decoration: none;
-            border-radius: 0.375rem;
-            transition: background-color 0.2s ease, color 0.2s ease;
-            font-size: 0.95rem; /* Tamaño de fuente de los enlaces */
-        }
-        #sidebar ul li a:hover, #sidebar ul li a.active {
-            background-color: #374151; /* Tailwind gray-700 */
-            color: white;
-        }
-        #sidebar ul li a i { margin-right: 0.85rem; /* Espacio del icono */ width: 20px; /* Ancho fijo para iconos */ }
-
-        /* Main Content Area */
-        #mainContent {
-            flex-grow: 1;
-            padding: 2rem; /* Padding del contenido principal */
-            margin-left: 260px; /* Igual al ancho del sidebar */
-            transition: margin-left 0.3s ease-in-out;
-        }
-        #mainContent.sidebar-collapsed {
-            margin-left: 0;
-        }
-
-        /* Hamburger Button */
-        #menuToggle {
-            position: fixed;
-            top: 1.25rem; /* Posición del botón de menú */
-            left: 1.25rem;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.7rem 1rem; /* Padding del botón de menú */
-            border-radius: 0.375rem;
-            cursor: pointer;
-            z-index: 50;
-            font-size: 1.25rem; /* Tamaño del icono del menú */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        #menuToggle:hover { background-color: #2563eb; }
-
-        /* Contenedor principal del dashboard */
-        .dashboard-container {
-            width: 100%;
-            max-width: 1300px; /* Ancho máximo del contenido del dashboard */
-            margin: 0 auto; /* Centrar el contenido */
-        }
-        .dashboard-container h1.page-title { /* Título principal de la página del dashboard */
-            font-size: 2rem; /* Tamaño del título */
-            font-weight: 700;
-            color: #111827; /* Tailwind gray-900 */
-            margin-bottom: 2rem;
-        }
-
-        /* Estilos para el gráfico y secciones de configuración/entrada */
-        #chartContainer {
-            width: 100%;
-            height: 550px; /* Altura del gráfico aumentada */
-            margin-bottom: 2.5rem; /* Espacio debajo del gráfico */
-            position: relative;
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-        }
-        .config-section, .data-input-section { /* Estilos comunes para secciones */
-            margin-top: 2rem;
-            padding: 1.75rem; /* Padding de las secciones */
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-        }
-        .config-section h2, .data-input-section h2 {
-            font-size: 1.5rem; /* Tamaño de los subtítulos de sección */
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 1.25rem;
-            border-bottom: 1px solid #e5e7eb; /* Línea divisoria */
-            padding-bottom: 0.75rem;
-        }
-        .grid-form { /* Grid para formularios */
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Columnas responsivas */
-            gap: 1.25rem; /* Espacio entre elementos del grid */
-            margin-bottom: 1.5rem;
-        }
-        .grid-form label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 0.4rem;
-            color: #4b5563; /* Tailwind gray-600 */
-            font-weight: 500;
-        }
-        .grid-form input, .grid-form select {
-            width: 100%;
-            padding: 0.65rem 0.85rem; /* Padding de inputs y selects */
-            border: 1px solid #d1d5db; /* Tailwind gray-300 */
-            border-radius: 0.5rem; /* Bordes más redondeados */
+        .interval-selector-container label {
             font-size: 0.95rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 500;
+            color: #374151; /* Tailwind gray-700 */
         }
-        .grid-form input:focus, .grid-form select:focus {
+        .interval-selector-container select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            flex-grow: 1;
+            max-width: 250px; /* Max width for the select */
+        }
+        .interval-selector-container select:focus {
             outline: none;
             border-color: #3b82f6; /* Tailwind blue-500 */
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
-        .button {
-            background-color: #3b82f6;
-            color: white;
-            padding: 0.75rem 1.5rem; /* Padding de botones */
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: background-color 0.3s ease;
-            display: inline-flex; /* Para alinear iconos en botones */
-            align-items: center;
-            justify-content: center;
-        }
-        .button:hover { background-color: #2563eb; }
-        .button i { margin-right: 0.5rem; }
 
-        #dataTableContainer {
-            margin-top: 1.5rem;
-            max-height: 350px; /* Altura máxima de la tabla */
-            overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+        /* Ensure chart container allows for scrolling */
+        #chartContainer {
+            /* ... (existing styles for chartContainer) ... */
+            overflow-x: auto; /* Enable horizontal scroll */
+            position: relative; /* Needed for potential absolute positioning of canvas or other elements */
         }
-        #dataTable { width: 100%; border-collapse: collapse; }
-        #dataTable th, #dataTable td {
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0.85rem 1rem; /* Padding de celdas de tabla */
-            text-align: left;
-            font-size: 0.9rem;
-        }
-        #dataTable th {
-            background-color: #f9fafb; /* Tailwind gray-50 */
-            position: sticky;
-            top: 0;
-            font-weight: 600;
-            color: #374151;
-        }
-        #dataTable tbody tr:hover { background-color: #f3f4f6; } /* Hover en filas */
-
-        /* Modal for CSV Uploader */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background-color: #fff; margin: auto; padding: 2.5rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 750px; position: relative; }
-        .modal-close { color: #aaa; position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; font-weight: bold; cursor: pointer; }
-        .modal-close:hover, .modal-close:focus { color: #333; }
-        #csvUploaderContainer h1 { font-size: 1.75rem; margin-bottom: 1.5rem; color: #111827; }
-        #dropZone { border: 2px dashed #9ca3af; border-radius: 0.5rem; padding: 2rem; text-align: center; margin-bottom: 1.5rem; background-color: #f9fafb; transition: background-color 0.2s ease; cursor: pointer; }
-        #dropZone.dragover { background-color: #e0e7ff; border-color: #3b82f6; }
-        #dropZone p { margin: 0; color: #6b7280; }
-        input[type="file"]#csvFileInput, input[type="url"]#googleSheetUrlInput { margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; width: 100%; }
-        .button-load-url { background-color: #10b981; margin-bottom: 1.5rem; }
-        .button-load-url:hover { background-color: #059669; }
-        .message-box { margin-top: 1rem; padding: 0.85rem; border-radius: 0.5rem; border-width: 1px; border-style: solid; font-size: 0.9rem; }
-        .message-box.success { background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-        .message-box.error { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-        .message-box.info { background-color: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-        #csvDataTableContainerModal { max-height: 280px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; }
-        #csvDataTableModal { width: 100%; border-collapse: collapse; }
-        #csvDataTableModal th, #csvDataTableModal td { border-bottom: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; font-size: 0.875rem; }
-        #csvDataTableModal th { background-color: #f9fafb; position: sticky; top: 0; font-weight: 600; }
-
     </style>
 </head>
 <body>
-    <button id="menuToggle"><i class="fas fa-bars"></i></button>
-
-    <aside id="sidebar">
-        <h2>VitalSigns Pro</h2>
-        <nav>
-            <ul>
-                <li><a href="#" id="showDashboardLink" class="active"><i class="fas fa-chart-line"></i> Dashboard Gráfico</a></li>
-                <li><a href="#" id="openCsvUploader"><i class="fas fa-file-upload"></i> Cargar Datos CSV</a></li>
-            </ul>
-        </nav>
-    </aside>
-
     <main id="mainContent">
         <div class="dashboard-container">
             <h1 class="page-title">Panel de Constantes Vitales</h1>
@@ -234,436 +51,222 @@
             <div id="chartContainer">
                 <canvas id="vitalSignsChart"></canvas>
             </div>
-    
-            <div class="config-section">
-                <h2>Configurar Escalas de Ejes (Y)</h2>
-                <div class="grid-form">
-                    <div>
-                        <label for="tempMin">Temp Min (°C):</label>
-                        <input type="number" id="tempMin" value="34" class="p-2 border rounded">
-                        <label for="tempMax" class="mt-2">Temp Max (°C):</label>
-                        <input type="number" id="tempMax" value="42" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="hrMin">FC Min (lpm):</label>
-                        <input type="number" id="hrMin" value="40" class="p-2 border rounded">
-                        <label for="hrMax" class="mt-2">FC Max (lpm):</label>
-                        <input type="number" id="hrMax" value="180" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="rrMin">FR Min (rpm):</label>
-                        <input type="number" id="rrMin" value="0" class="p-2 border rounded">
-                        <label for="rrMax" class="mt-2">FR Max (rpm):</label>
-                        <input type="number" id="rrMax" value="50" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="bpMin">TA Min (mmHg):</label>
-                        <input type="number" id="bpMin" value="40" class="p-2 border rounded">
-                        <label for="bpMax" class="mt-2">TA Max (mmHg):</label>
-                        <input type="number" id="bpMax" value="220" class="p-2 border rounded">
-                    </div>
-                </div>
-                <button id="applyScaleConfig" class="button"><i class="fas fa-ruler-combined"></i> Aplicar Escalas</button>
-            </div>
-    
-            <div class="data-input-section">
-                <h2>Registrar Nuevas Constantes</h2>
-                <div class="grid-form">
-                    <div>
-                        <label for="inputFecha">Fecha:</label>
-                        <input type="date" id="inputFecha" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputTurno">Turno:</label>
-                        <select id="inputTurno" class="p-2 border rounded">
-                            <option value="M">Mañana</option>
-                            <option value="T">Tarde</option>
-                            <option value="N">Noche</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="inputTemp">Temperatura (°C):</label>
-                        <input type="number" step="0.1" id="inputTemp" placeholder="Ej: 36.5" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputTAS">TA Sistólica (mmHg):</label>
-                        <input type="number" id="inputTAS" placeholder="Ej: 120" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputTAD">TA Diastólica (mmHg):</label>
-                        <input type="number" id="inputTAD" placeholder="Ej: 80" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputFC">Frec. Cardíaca (lpm):</label>
-                        <input type="number" id="inputFC" placeholder="Ej: 70" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputFR">Frec. Respiratoria (rpm):</label>
-                        <input type="number" id="inputFR" placeholder="Ej: 16" class="p-2 border rounded">
-                    </div>
-                    <div>
-                        <label for="inputSatO2">Sat. O₂ (%):</label>
-                        <input type="number" id="inputSatO2" placeholder="Ej: 98 (opcional)" class="p-2 border rounded">
-                    </div>
-                </div>
-                <button id="addDataButton" class="button"><i class="fas fa-plus-circle"></i> Añadir y Actualizar</button>
-                
-                <div id="dataTableContainer">
-                    <h3>Datos Registrados:</h3>
-                    <table id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Turno</th>
-                                <th>T (°C)</th>
-                                <th>TA (Sis/Dia)</th>
-                                <th>FC (lpm)</th>
-                                <th>FR (rpm)</th>
-                                <th>SatO₂ (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
 
-    <div id="csvUploaderModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" id="closeCsvModal">&times;</span>
-            <div id="csvUploaderContainer">
-                <h1>Cargar Datos CSV</h1>
-                <p class="text-sm text-gray-600 mb-3">Puedes cargar un archivo CSV local o desde una URL de Google Sheets publicada como CSV.</p>
-                
-                <label for="googleSheetUrlInput" class="block text-sm font-medium text-gray-700 mb-1">URL de Google Sheet (publicada como CSV):</label>
-                <input type="url" id="googleSheetUrlInput" 
-                       placeholder="Pega aquí la URL del CSV publicado" 
-                       value="https://docs.google.com/spreadsheets/d/e/2PACX-1vThcYOP6TMxWvWw3n-DfBeQfJSvOmtZe1WpHM3sOl7yus_tvuxgn6tTcmUf5C3oR0CiPglW-7_TOCOI/pub?output=csv" 
-                       class="mb-2">
-                <button id="loadFromUrlButton" class="button button-load-url w-full">
-                    <i class="fas fa-cloud-download-alt"></i>Cargar desde URL
-                </button>
-                
-                <p class="text-center my-3 text-gray-500 text-sm font-medium">O carga un archivo local:</p>
-                
-                <div id="dropZone">
-                    <p><i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i><br>Arrastra y suelta un archivo CSV aquí, o haz clic para seleccionar.</p>
-                </div>
-                <input type="file" id="csvFileInput" accept=".csv" class="hidden"> 
-                <div id="messageAreaModal" class="message-box info" style="display: none;"></div>
-                
-                <div id="csvDataTableContainerModal">
-                    <table id="csvDataTableModal">
-                        <thead>
-                            <tr id="csvHeaderRowModal"></tr>
-                        </thead>
-                        <tbody id="csvBodyModal"></tbody>
-                    </table>
-                </div>
+            <div class="interval-selector-container">
+                <label for="timeIntervalSelector">Mostrar Rango:</label>
+                <select id="timeIntervalSelector">
+                    <option value="24h" selected>Último Día (24h)</option>
+                    <option value="3days">Últimos 3 Días</option>
+                    <option value="1week">Última Semana</option>
+                    <option value="2weeks">Últimas 2 Semanas</option>
+                    <option value="1month">Último Mes</option>
+                </select>
             </div>
-        </div>
-    </div>
+    
+            </div>
+    </main>
 
     <script>
         // --- Datos Globales y Estado ---
         let patientData = [ // Datos iniciales de ejemplo
             { fecha: "2024-05-20", turno: "M", temp: 36.5, tas: 120, tad: 80, fc: 70, fr: 16, sato2: 98 },
             { fecha: "2024-05-20", turno: "T", temp: 37.0, tas: 122, tad: 81, fc: 75, fr: 18, sato2: 97 },
-            { fecha: "2024-05-21", turno: "N", temp: 36.8, tas: 118, tad: 78, fc: 68, fr: 15 },
+            { fecha: "2024-05-20", turno: "N", temp: 36.9, tas: 121, tad: 79, fc: 72, fr: 17, sato2: 98 },
+            { fecha: "2024-05-21", turno: "M", temp: 36.8, tas: 118, tad: 78, fc: 68, fr: 15, sato2: 99 },
+            { fecha: "2024-05-21", turno: "T", temp: 37.1, tas: 120, tad: 80, fc: 70, fr: 16, sato2: 97 },
         ];
         let vitalSignsChart;
         let isSidebarCollapsed = false;
+        let currentlyDisplayedData = []; // To hold data passed to chart for annotations
 
         // --- Elementos del DOM (Dashboard) ---
         const ctx = document.getElementById('vitalSignsChart').getContext('2d');
         const inputFecha = document.getElementById('inputFecha');
-        const inputTurno = document.getElementById('inputTurno');
-        const inputTemp = document.getElementById('inputTemp');
-        const inputTAS = document.getElementById('inputTAS');
-        const inputTAD = document.getElementById('inputTAD');
-        const inputFC = document.getElementById('inputFC');
-        const inputFR = document.getElementById('inputFR');
-        const inputSatO2 = document.getElementById('inputSatO2'); // Correcto
-        const addDataButton = document.getElementById('addDataButton');
-        const dataTableBody = document.querySelector('#dataTable tbody');
-        const applyScaleButton = document.getElementById('applyScaleConfig');
+        // ... (otros elementos del DOM que ya tienes)
+        const timeIntervalSelector = document.getElementById('timeIntervalSelector'); // Nuevo selector
 
         // --- Elementos del DOM (Sidebar y Modal) ---
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const menuToggle = document.getElementById('menuToggle');
-        const showDashboardLink = document.getElementById('showDashboardLink');
-        const openCsvUploaderBtn = document.getElementById('openCsvUploader');
-        const csvUploaderModal = document.getElementById('csvUploaderModal');
-        const closeCsvModal = document.getElementById('closeCsvModal');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const googleSheetUrlInput = document.getElementById('googleSheetUrlInput');
-        const loadFromUrlButton = document.getElementById('loadFromUrlButton');
-        const messageAreaModal = document.getElementById('messageAreaModal');
-        const dropZone = document.getElementById('dropZone');
-        const csvHeaderRowModal = document.getElementById('csvHeaderRowModal');
-        const csvBodyModal = document.getElementById('csvBodyModal');
+        // ... (tus elementos del DOM existentes) ...
 
 
         // --- Lógica de Sidebar y Navegación Modal ---
-        menuToggle.addEventListener('click', () => {
-            isSidebarCollapsed = !isSidebarCollapsed;
-            sidebar.classList.toggle('collapsed', isSidebarCollapsed);
-            mainContent.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
-            menuToggle.style.left = isSidebarCollapsed ? '1.25rem' : `calc(260px + 1.25rem)`;
-            setTimeout(() => {
-                if (vitalSignsChart) vitalSignsChart.resize();
-            }, 350);
-        });
-        menuToggle.style.left = `calc(260px + 1.25rem)`;
+        // ... (tu lógica existente) ...
 
-        showDashboardLink.addEventListener('click', (e) => { e.preventDefault(); setActiveLink(showDashboardLink); csvUploaderModal.style.display = 'none'; });
-        openCsvUploaderBtn.addEventListener('click', (e) => { e.preventDefault(); csvUploaderModal.style.display = 'flex'; });
-        closeCsvModal.addEventListener('click', () => { csvUploaderModal.style.display = 'none'; });
-        window.addEventListener('click', (event) => { if (event.target === csvUploaderModal) csvUploaderModal.style.display = 'none'; });
-        function setActiveLink(activeLink) {
-            document.querySelectorAll('#sidebar nav ul li a').forEach(link => link.classList.remove('active'));
-            activeLink.classList.add('active');
-        }
-        
         // --- Lógica del Cargador de CSV (Modal) ---
-        dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', (event) => {
-            event.preventDefault();
-            dropZone.classList.remove('dragover');
-            const files = event.dataTransfer.files;
-            if (files.length > 0 && files[0].name.endsWith('.csv')) {
-                handleLocalCsvFile(files[0]);
-            } else {
-                showMessageInModal('Por favor, suelta un archivo CSV.', 'error');
-            }
-        });
-        dropZone.addEventListener('click', () => csvFileInput.click());
-        csvFileInput.addEventListener('change', (event) => {
-            if (event.target.files.length > 0) handleLocalCsvFile(event.target.files[0]);
-        });
-
-        loadFromUrlButton.addEventListener('click', async () => {
-            const url = googleSheetUrlInput.value.trim();
-            if (!url) return showMessageInModal('Introduce una URL de Google Sheets CSV.', 'error');
-            if (!url.includes('docs.google.com/spreadsheets') || !url.includes('output=csv')) {
-                return showMessageInModal('URL no válida. Asegúrate que sea de Google Sheets y termine en "output=csv".', 'error');
-            }
-            showMessageInModal('Cargando desde URL...', 'info');
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-                const csvContent = await response.text();
-                processAndDisplayCsvData(csvContent, `URL: ${new URL(url).hostname}`);
-            } catch (error) {
-                showMessageInModal(`Error al cargar desde URL: ${error.message}`, 'error');
-            }
-        });
-
-        function handleLocalCsvFile(file) {
-            showMessageInModal(`Archivo local: ${file.name}`, 'info');
-            const reader = new FileReader();
-            reader.onload = (e) => processAndDisplayCsvData(e.target.result, file.name);
-            reader.onerror = () => showMessageInModal('Error al leer archivo local.', 'error');
-            reader.readAsText(file);
-        }
-
-        function processAndDisplayCsvData(csvContent, sourceName) {
-            try {
-                const { data, headers } = parseGenericCsv(csvContent); 
-                if (data.length === 0) {
-                    showMessageInModal(`CSV de '${sourceName}' vacío o sin datos válidos.`, 'error');
-                    return;
-                }
-                
-                displayCsvDataInModal(data, headers); 
-                transformAndSetGlobalPatientData(data, headers); 
-
-                if (patientData.length > 0) { // Verificar si la transformación produjo datos válidos
-                    showMessageInModal(`Datos de '${sourceName}' procesados. Puedes cerrar esta ventana.`, 'success');
-                    createChart(patientData); 
-                    renderDataTable();      
-                } else {
-                     showMessageInModal(`No se pudieron transformar datos válidos del CSV de '${sourceName}'. Verifica el formato y las cabeceras.`, 'error');
-                }
-            } catch (error) {
-                console.error("Error en processAndDisplayCsvData:", error)
-                showMessageInModal(`Error procesando CSV de '${sourceName}': ${error.message}`, 'error');
-            }
-        }
-        
-        function parseGenericCsv(csvText) { 
-            const lines = csvText.trim().split(/\r\n|\n/);
-            if (lines.length === 0) return { data: [], headers: [] };
-            const headers = lines[0].split(',').map(h => h.trim());
-            const data = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
-                if (values.length === headers.length) {
-                    return headers.reduce((obj, header, i) => {
-                        obj[header] = values[i];
-                        return obj;
-                    }, {});
-                }
-                console.warn("Línea CSV ignorada por número incorrecto de columnas:", line);
-                return null; 
-            }).filter(row => row !== null);
-            return { data, headers };
-        }
+        // ... (tu lógica existente, asegurate que transformAndSetGlobalPatientData llama a updateChartView) ...
 
         function transformAndSetGlobalPatientData(parsedCsvData, csvHeaders) {
-            const keyMap = {
-                fecha: ['fecha', 'date', 'timestamp'],
-                hora: ['hora', 'time'], // Para extraer la hora y derivar el turno
-                temp: ['temp', 'temperatura', 'temperature', 't', 't (°c)'],
-                tas: ['tas', 'sistolica', 'systolic', 'ta sistolica', 'tas (mmhg)'],
-                tad: ['tad', 'diastolica', 'diastolic', 'ta diastolica', 'tad (mmhg)'],
-                fc: ['fc', 'frecuencia cardiaca', 'hr', 'heart rate', 'fc (lpm)'],
-                fr: ['fr', 'frecuencia respiratoria', 'rr', 'respiratory rate', 'fr (rpm)'],
-                sato2: ['sato2', 'saturacion', 'saturation', 'spo2', 'sato2 (%)']
-            };
-
-            const findHeader = (possibleNames) => csvHeaders.find(h => possibleNames.includes(h.toLowerCase()));
-
-            const transformed = parsedCsvData.map(row => {
-                const newEntry = {};
-                let fechaStr, horaStr;
-
-                // Mapear Fecha
-                const fechaHeader = findHeader(keyMap.fecha);
-                if (fechaHeader && row[fechaHeader] !== undefined && row[fechaHeader] !== '') {
-                    try {
-                        // Intentar normalizar la fecha a YYYY-MM-DD
-                        const d = new Date(row[fechaHeader].replace(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/, '$3-$2-$1')); // Intenta convertir DD/MM/YYYY a YYYY-MM-DD
-                        if (isNaN(d.getTime())) { // Si falla, intenta parseo directo
-                             const directDate = new Date(row[fechaHeader]);
-                             if(isNaN(directDate.getTime())) throw new Error('Invalid date');
-                             fechaStr = directDate.toISOString().split('T')[0];
-                        } else {
-                            fechaStr = d.toISOString().split('T')[0];
-                        }
-                        newEntry.fecha = fechaStr;
-                    } catch { 
-                        console.warn(`Formato de fecha inválido para '${row[fechaHeader]}', se ignora la fila.`); return null; 
-                    }
-                } else {
-                    console.warn("Fila ignorada por falta de cabecera/valor de fecha:", row); return null;
-                }
-
-                // Mapear Hora y derivar Turno
-                const horaHeader = findHeader(keyMap.hora);
-                if (horaHeader && row[horaHeader] !== undefined && row[horaHeader] !== '') {
-                    horaStr = row[horaHeader];
-                    const hourMatch = horaStr.match(/^(\d{1,2})/); // Extraer la hora
-                    if (hourMatch) {
-                        const hour = parseInt(hourMatch[1], 10);
-                        if (hour >= 7 && hour < 15) newEntry.turno = 'M';      // Mañana: 7:00 - 14:59
-                        else if (hour >= 15 && hour < 22) newEntry.turno = 'T'; // Tarde: 15:00 - 21:59
-                        else newEntry.turno = 'N';                              // Noche: 22:00 - 06:59
-                    } else {
-                        console.warn(`Formato de hora inválido '${horaStr}', no se pudo derivar turno. Fila ignorada.`); return null;
-                    }
-                } else {
-                    console.warn("Fila ignorada por falta de cabecera/valor de hora para derivar turno:", row); return null;
-                }
-                
-                // Mapear otras constantes
-                ['temp', 'tas', 'tad', 'fc', 'fr', 'sato2'].forEach(internalKey => {
-                    const header = findHeader(keyMap[internalKey]);
-                    if (header && row[header] !== undefined && row[header] !== '') {
-                        let value = parseFloat(String(row[header]).replace(',', '.'));
-                        if (!isNaN(value)) newEntry[internalKey] = value;
-                        else newEntry[internalKey] = undefined; // Si no es número válido, dejar undefined
-                    }
-                });
-                return newEntry;
-            }).filter(entry => entry !== null && entry.fecha && entry.turno); // Asegurar que fecha y turno existan después de todo
-
-            transformed.sort((a, b) => {
-                const dateA = new Date(a.fecha).getTime();
-                const dateB = new Date(b.fecha).getTime();
-                if (dateA !== dateB) return dateA - dateB;
-                const turnoOrder = { 'M': 1, 'T': 2, 'N': 3 };
-                return turnoOrder[a.turno] - turnoOrder[b.turno];
-            });
-            patientData = transformed; 
-            console.log("PatientData global actualizado:", patientData);
+            // ... (tu lógica existente para parsear y transformar) ...
+            // Al final de esta función, después de patientData = transformed;
+            // patientData = transformed; // Esta línea ya existe
+            // console.log("PatientData global actualizado:", patientData);
+            
+            // Añadido: Actualizar la vista del gráfico con los nuevos datos cargados y el intervalo seleccionado
+            if (patientData.length > 0) {
+                 showMessageInModal(`Datos de '${csvHeaders}' procesados y aplicados al gráfico.`, 'success');
+                 updateChartView(); // Actualiza el gráfico con los nuevos datos y el selector actual
+                 renderDataTable(); // Actualiza la tabla también
+            } else {
+                showMessageInModal(`No se pudieron transformar datos válidos del CSV de '${csvHeaders}'. Verifica el formato y las cabeceras.`, 'error');
+                // Si no hay datos, podríamos querer limpiar el gráfico o mostrar un mensaje
+                if (vitalSignsChart) vitalSignsChart.destroy();
+                dataTableBody.innerHTML = ''; // Limpiar tabla
+            }
         }
 
 
-        function displayCsvDataInModal(data, headers) {
-            csvHeaderRowModal.innerHTML = '';
-            csvBodyModal.innerHTML = '';
-            if (data.length === 0) return;
-            headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; csvHeaderRowModal.appendChild(th); });
-            data.slice(0, 30).forEach(row => { 
-                const tr = csvBodyModal.insertRow();
-                headers.forEach(header => tr.insertCell().textContent = row[header] !== undefined ? row[header] : '-');
-            });
+        // --- Nueva Lógica para el Gráfico Mejorado ---
+
+        /**
+         * Convierte una entrada de patientData a un objeto Date para el eje de tiempo.
+         * Asigna horas fijas a los turnos M, T, N.
+         */
+        function getTimestampFromDataPoint(dataEntry) {
+            if (!dataEntry || !dataEntry.fecha || !dataEntry.turno) {
+                console.warn("Entrada de datos inválida para getTimestampFromDataPoint:", dataEntry);
+                return null;
+            }
+            const [year, month, day] = dataEntry.fecha.split('-').map(Number);
+            let hour = 8, minute = 0; // Mañana (M) por defecto
+            if (dataEntry.turno === 'T') { hour = 14; } // Tarde
+            else if (dataEntry.turno === 'N') { hour = 20; } // Noche
+            
+            // Usar Date constructor para hora local. Chart.js adaptadores manejan esto.
+            return new Date(year, month - 1, day, hour, minute);
         }
-        function showMessageInModal(text, type = 'info') {
-            messageAreaModal.textContent = text;
-            messageAreaModal.className = `message-box ${type}`;
-            messageAreaModal.style.display = 'block';
+        
+        /**
+         * Filtra y ordena los datos según el intervalo de tiempo seleccionado.
+         */
+        function filterAndSortData(data, interval) {
+            if (!data || data.length === 0) return [];
+
+            // Asegurar que los datos estén ordenados por fecha y turno
+            const sortedData = [...data].sort((a, b) => {
+                const tsA = getTimestampFromDataPoint(a);
+                const tsB = getTimestampFromDataPoint(b);
+                if (!tsA && !tsB) return 0;
+                if (!tsA) return 1;
+                if (!tsB) return -1;
+                return tsA.getTime() - tsB.getTime();
+            });
+
+            const lastDataPoint = sortedData[sortedData.length - 1];
+            if (!lastDataPoint) return [];
+            
+            let latestDate = getTimestampFromDataPoint(lastDataPoint);
+            if (!latestDate) latestDate = new Date(); // Fallback
+            latestDate.setHours(23, 59, 59, 999); // Fin del último día con datos
+
+            let startDate = new Date(latestDate);
+
+            switch (interval) {
+                case '24h': // Último día con datos
+                    const targetDay = getTimestampFromDataPoint(lastDataPoint);
+                    if (!targetDay) return [];
+                    startDate.setFullYear(targetDay.getFullYear(), targetDay.getMonth(), targetDay.getDate());
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case '3days':
+                    startDate.setDate(latestDate.getDate() - 2);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case '1week':
+                    startDate.setDate(latestDate.getDate() - 6);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case '2weeks':
+                    startDate.setDate(latestDate.getDate() - 13);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case '1month':
+                    startDate.setMonth(latestDate.getMonth() - 1);
+                    startDate.setDate(latestDate.getDate() + 1); // Ajustar al día correcto después de restar mes
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                default: // Por defecto, último día
+                    const defaultTargetDay = getTimestampFromDataPoint(lastDataPoint);
+                     if (!defaultTargetDay) return [];
+                    startDate.setFullYear(defaultTargetDay.getFullYear(), defaultTargetDay.getMonth(), defaultTargetDay.getDate());
+                    startDate.setHours(0, 0, 0, 0);
+            }
+
+            return sortedData.filter(d => {
+                const timestamp = getTimestampFromDataPoint(d);
+                return timestamp && timestamp.getTime() >= startDate.getTime() && timestamp.getTime() <= latestDate.getTime();
+            });
         }
 
-        function formatXAxisLabels(data) {
-            return data.map(d => {
-                try {
-                    // Asumimos que d.fecha ya es YYYY-MM-DD
-                    const dateParts = d.fecha.split('-');
-                    const year = parseInt(dateParts[0]);
-                    const month = parseInt(dateParts[1]) -1; // Meses en JS son 0-indexados
-                    const day = parseInt(dateParts[2]);
-                    
-                    const localDate = new Date(year, month, day); 
-                    const displayDay = String(localDate.getDate()).padStart(2, '0');
-                    const displayMonth = String(localDate.getMonth() + 1).padStart(2, '0');
-                    return `${displayDay}/${displayMonth} ${d.turno}`;
-                } catch (e) { console.error("Error formateando etiqueta X:", d, e); return "Error Fecha"; }
-            });
+        timeIntervalSelector.addEventListener('change', (event) => {
+            updateChartView();
+        });
+
+        function updateChartView() {
+            const selectedInterval = timeIntervalSelector.value;
+            currentlyDisplayedData = filterAndSortData(patientData, selectedInterval);
+            createChart(currentlyDisplayedData, selectedInterval);
+             //renderDataTable(); // Opcional: si la tabla también debe filtrarce. Por ahora la dejamos con todos los datos.
         }
         
         const customAnnotationsPlugin = {
             id: 'customAnnotations',
             afterDatasetsDraw: (chart) => {
-                const { ctx, data, chartArea: { top, bottom, left, right } } = chart;
+                const { ctx, data, chartArea: { top, bottom, left, right }, scales } = chart;
+                if (!currentlyDisplayedData || currentlyDisplayedData.length === 0) return;
+                
                 ctx.save();
                 ctx.font = 'bold 10px Inter';
                 ctx.textAlign = 'center';
 
-                patientData.forEach((pData, index) => { 
-                    const meta = chart.getDatasetMeta(0); 
-                    if (!meta.data[index]) return; 
+                currentlyDisplayedData.forEach((pData, index) => {
+                    // Encontrar el índice correspondiente en los datasets del gráfico.
+                    // Esto asume que currentlyDisplayedData está en el mismo orden y filtrado que los datos del gráfico.
+                    // Y que cada dataset en el gráfico tiene un punto para cada entrada en currentlyDisplayedData.
+                    const chartDataIndex = chart.data.datasets[0].data.findIndex(
+                        dp => dp && dp.x && getTimestampFromDataPoint(pData) && dp.x.getTime() === getTimestampFromDataPoint(pData).getTime()
+                    );
 
-                    const xPos = meta.data[index].x;
+                    if (chartDataIndex === -1) return; // No se encontró el punto en el gráfico
+
+                    const meta = chart.getDatasetMeta(0); // Usar cualquier meta para la posición X
+                    if (!meta.data || !meta.data[chartDataIndex]) return;
+
+                    const xPos = meta.data[chartDataIndex].x;
                     
+                    // Anotación SatO2
                     if (pData.sato2 !== undefined && pData.sato2 !== null) {
                         ctx.fillStyle = '#1f2937'; 
                         let yAnchor = top + 20; 
-                        const tempMeta = chart.getDatasetMeta(data.datasets.findIndex(ds => ds.label === 'Temperatura'));
-                        const tempPoint = tempMeta?.data[index];
-                        
-                        if (tempPoint && tempPoint.active !== false && tempPoint.y) { // Check if point exists and has y
-                             yAnchor = tempPoint.y - 15;
-                        } else if (pData.tas) { 
-                            const bpScale = chart.scales.yBP;
-                            if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
+
+                        const tempDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Temperatura');
+                        if (tempDatasetIndex !== -1) {
+                            const tempMeta = chart.getDatasetMeta(tempDatasetIndex);
+                            const tempPoint = tempMeta.data[chartDataIndex];
+                            if (tempPoint && tempPoint.active !== false && tempPoint.parsed && tempPoint.parsed.y !== null) {
+                                yAnchor = tempPoint.y - 15;
+                            } else if (pData.tas) {
+                                const bpScale = scales.yBP;
+                                if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
+                            }
+                        } else if (pData.tas) { // Fallback si no hay dataset de Temp
+                             const bpScale = scales.yBP;
+                             if (bpScale) yAnchor = bpScale.getPixelForValue(pData.tas) - 15;
                         }
 
+
                         if (xPos >= left && xPos <= right && yAnchor > top - 10 && yAnchor < bottom + 10) { 
-                           ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top - 5, yAnchor)); 
+                            ctx.fillText(String(pData.sato2) + "%", xPos, Math.max(top - 5, Math.min(yAnchor, bottom + 5))); 
                         }
                     }
 
+                    // Anotaciones para valores fuera de escala (Min/Max)
                     ['Temperatura', 'Frec. Cardíaca', 'Frec. Respiratoria'].forEach(label => {
-                        const datasetIndex = data.datasets.findIndex(ds => ds.label === label);
+                        const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === label);
                         if (datasetIndex === -1) return;
                         
-                        const dataset = data.datasets[datasetIndex];
-                        const yScale = chart.scales[dataset.yAxisID];
-                        const value = dataset.data[index]; 
+                        const dataset = chart.data.datasets[datasetIndex];
+                        const yScale = scales[dataset.yAxisID];
+                        const value = dataset.data[chartDataIndex] ? dataset.data[chartDataIndex].y : null; 
 
                         if (value === null || value === undefined || !yScale) return;
 
@@ -680,18 +283,69 @@
             }
         };
 
-        function createChart(currentData) {
-            if (!currentData || currentData.length === 0) {
-                console.log("createChart llamado con datos vacíos o nulos.");
-                if (vitalSignsChart) vitalSignsChart.destroy(); // Destruir gráfico existente si hay
-                // Podrías dibujar un gráfico placeholder aquí si lo deseas
-                return;
-            }
-            console.log("Creando gráfico con datos:", currentData);
 
-            const labels = formatXAxisLabels(currentData);
+        function createChart(dataToDisplay, interval) {
+            if (!dataToDisplay || dataToDisplay.length === 0) {
+                console.log("createChart llamado con datos vacíos o nulos.");
+                if (vitalSignsChart) vitalSignsChart.destroy();
+                // Podrías mostrar un mensaje en el canvas
+                const chartContainer = document.getElementById('chartContainer');
+                chartContainer.innerHTML = '<canvas id="vitalSignsChart"></canvas><p style="text-align:center; padding: 20px;">No hay datos para mostrar para el período seleccionado.</p>';
+                document.getElementById('vitalSignsChart').getContext('2d'); //Re-get context if canvas was replaced
+                return;
+            } else {
+                 const chartContainer = document.getElementById('chartContainer');
+                 if (chartContainer.querySelector('p')) { // Remove "no data" message if exists
+                    chartContainer.innerHTML = '<canvas id="vitalSignsChart"></canvas>';
+                 }
+            }
+            // console.log("Creando gráfico con datos:", dataToDisplay);
+
+            let timeUnit = 'hour';
+            let tooltipFormat = 'dd/MM HH:mm';
+            let minRotation = 0;
+            let maxRotation = 50;
+            let autoSkip = true;
+
+            switch (interval) {
+                case '24h': timeUnit = 'hour'; tooltipFormat = 'HH:mm dd/MM'; minRotation = 30; break;
+                case '3days': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; minRotation = 0; autoSkip = dataToDisplay.length > 20; break;
+                case '1week': timeUnit = 'day'; tooltipFormat = 'dd/MM/yy'; autoSkip = dataToDisplay.length > 30; break;
+                case '2weeks': timeUnit = 'week'; tooltipFormat = 'Week W, yyyy'; autoSkip = true; break;
+                case '1month': timeUnit = 'week'; tooltipFormat = 'Week W, yyyy'; autoSkip = true; break;
+            }
+            
+            const timestamps = dataToDisplay.map(d => getTimestampFromDataPoint(d)).filter(ts => ts !== null);
+            let minDate = timestamps.length > 0 ? new Date(Math.min(...timestamps.map(ts => ts.getTime()))) : new Date();
+            let maxDate = timestamps.length > 0 ? new Date(Math.max(...timestamps.map(ts => ts.getTime()))) : new Date();
+
+            // Ajustar minDate y maxDate para el intervalo '24h' para cubrir todo el día
+            if (interval === '24h' && timestamps.length > 0) {
+                minDate.setHours(0,0,0,0);
+                maxDate.setHours(23,59,59,999); // Asegura que el maxDate sea el final del último día con datos
+            }
+
+
             let scalesOptions = {
-                x: { type: 'category', labels: labels, grid: { display: true, color: 'rgba(200,200,200,0.2)', borderColor: 'rgba(200,200,200,0.5)', borderDash: [2,3]}, ticks: { color: '#555', font: {size: 10}}},
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: timeUnit,
+                        tooltipFormat: tooltipFormat,
+                        parser: 'iso', // Ya que pasamos objetos Date
+                        displayFormats: {
+                           hour: 'HH:mm', // Muestra solo hora para 'hour' unit
+                           day: 'dd/MM',  // Muestra día/mes para 'day' unit
+                           week: 'MMM dd', // Para 'week' unit
+                           month: 'MMM yyyy'// Para 'month' unit
+                        }
+                    },
+                    min: minDate.valueOf(), // Usar .valueOf() para pasar el timestamp numérico
+                    max: maxDate.valueOf(),
+                    grid: { display: true, color: 'rgba(200,200,200,0.2)', borderColor: 'rgba(200,200,200,0.5)', borderDash: [2,3]},
+                    ticks: { color: '#555', font: {size: 10}, autoSkip: autoSkip, minRotation: minRotation, maxRotation: maxRotation, source: 'auto'}
+                },
+                // Las escalas Y se mantienen como las definiste, pero asegúrate que los IDs coincidan
                 yTemp: { type: 'linear', position: 'left', display: true, min: parseFloat(document.getElementById('tempMin').value), max: parseFloat(document.getElementById('tempMax').value), title: { display: true, text: 'Temp (°C)', color: 'red', font:{weight:'bold'}}, ticks: { color: 'red', stepSize: 0.5 }, grid: { drawOnChartArea: false }},
                 yFC: { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('hrMin').value), max: parseFloat(document.getElementById('hrMax').value), title: { display: true, text: 'FC (lpm)', color: 'blue', font:{weight:'bold'}}, ticks: { color: 'blue', stepSize: 10 }, grid: { drawOnChartArea: false }},
                 yFR: { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('rrMin').value), max: parseFloat(document.getElementById('rrMax').value), title: { display: true, text: 'FR (rpm)', color: 'black', font:{weight:'bold'}}, ticks: { color: 'black', stepSize: 5 }, offset: true, grid: { drawOnChartArea: false }},
@@ -699,110 +353,126 @@
             };
 
             if (vitalSignsChart) vitalSignsChart.destroy();
-            vitalSignsChart = new Chart(ctx, {
-                type: 'bar',
+            
+            const newCtx = document.getElementById('vitalSignsChart').getContext('2d'); // Re-get context in case canvas was replaced
+
+            vitalSignsChart = new Chart(newCtx, {
+                // Type 'bar' is overall, lines override this per dataset
+                type: 'bar', 
                 data: {
-                    labels: labels,
+                    // Labels no son necesarios para el eje de tiempo cuando se proveen datos {x,y}
                     datasets: [
-                        { label: 'Temperatura', data: currentData.map(d => d.temp), borderColor: 'red', backgroundColor: 'red', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yTemp', order: 1, spanGaps: true },
-                        { label: 'Frec. Cardíaca', data: currentData.map(d => d.fc), borderColor: 'blue', backgroundColor: 'blue', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFC', order: 2, spanGaps: true },
-                        { label: 'Frec. Respiratoria', data: currentData.map(d => d.fr), borderColor: 'black', backgroundColor: 'black', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFR', order: 3, spanGaps: true },
-                        { label: 'Tensión Arterial', data: currentData.map(d => (d.tas && d.tad) ? [d.tad, d.tas] : null), backgroundColor: 'rgba(46, 204, 113, 0.7)', borderColor: 'green', borderWidth: 2, barPercentage: 0.1, categoryPercentage: 0.2, yAxisID: 'yBP', type: 'bar', order: 0 },
-                        { label: 'SatO₂', data: currentData.map(d => d.sato2), hidden: true, yAxisID: 'yTemp' } 
+                        { label: 'Temperatura', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.temp === undefined ? null : d.temp})), borderColor: 'red', backgroundColor: 'red', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yTemp', order: 1, spanGaps: true },
+                        { label: 'Frec. Cardíaca', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.fc === undefined ? null : d.fc})), borderColor: 'blue', backgroundColor: 'blue', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFC', order: 2, spanGaps: true },
+                        { label: 'Frec. Respiratoria', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: d.fr === undefined ? null : d.fr})), borderColor: 'black', backgroundColor: 'black', type: 'line', pointStyle: 'circle', radius: 5, hoverRadius: 7, tension: 0.1, yAxisID: 'yFR', order: 3, spanGaps: true },
+                        { label: 'Tensión Arterial', data: dataToDisplay.map(d => ({x: getTimestampFromDataPoint(d), y: (d.tas !== undefined && d.tad !== undefined) ? [d.tad, d.tas] : null })), backgroundColor: 'rgba(46, 204, 113, 0.7)', borderColor: 'green', borderWidth: 1, barPercentage: 0.4, categoryPercentage: 0.5, yAxisID: 'yBP', type: 'bar', order: 0 },
+                        { label: 'SatO₂', data: dataToDisplay.map(d => ({ x: getTimestampFromDataPoint(d), y: d.sato2 === undefined ? null : d.sato2 })), hidden: true, yAxisID: 'yTemp' } // No se muestra en leyenda, usado por plugin
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, stacked: false,
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    interaction: { mode: 'index', intersect: false }, 
+                    stacked: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, filter: (item) => item.datasetIndex !== 4 }},
+                        legend: { position: 'bottom', labels: { usePointStyle: true, filter: (item) => item.datasetIndex !== 4 }}, // Ocultar SatO2 de la leyenda
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let label = context.dataset.label || '';
                                     if (label) label += ': ';
-                                    if (context.dataset.label === 'Tensión Arterial' && context.raw && Array.isArray(context.raw)) {
-                                        label += `${context.raw[1]}/${context.raw[0]}`;
+                                    if (context.dataset.label === 'Tensión Arterial' && context.raw && Array.isArray(context.raw.y)) {
+                                        label += `${context.raw.y[1]}/${context.raw.y[0]}`; // y es [TAD, TAS]
                                     } else if (context.parsed.y !== null) {
                                         label += context.parsed.y;
                                     }
-                                    const originalDataPoint = patientData[context.dataIndex]; 
-                                    if (originalDataPoint && originalDataPoint.sato2 !== undefined && context.dataset.label !== 'SatO₂') {
-                                        // Podrías añadir SatO2 aquí si es necesario, pero el plugin ya lo dibuja
-                                    }
+                                    // Si quieres añadir SatO2 al tooltip general (aunque ya se anota en gráfico):
+                                    // const originalDataPoint = currentlyDisplayedData[context.dataIndex];
+                                    // if (originalDataPoint && originalDataPoint.sato2 !== undefined && label) {
+                                    //    label += ` (SatO₂: ${originalDataPoint.sato2}%)`;
+                                    // }
                                     return label;
                                 }
                             }
                         },
-                        customAnnotations: {}
+                        // customAnnotations: {} // El plugin se registra globalmente o al crear el chart
                     },
                     scales: scalesOptions
                 },
-                plugins: [customAnnotationsPlugin]
+                plugins: [customAnnotationsPlugin] // Registrar el plugin aquí
             });
+
+            // Para el scroll horizontal: ajustar el ancho del canvas si es necesario
+            const chartCanvas = document.getElementById('vitalSignsChart');
+            const containerWidth = document.getElementById('chartContainer').offsetWidth;
+            // Estimación de ancho necesario. Ajusta el multiplicador (e.g., 50px por punto) según la densidad deseada.
+            const desiredCanvasWidth = Math.max(containerWidth, dataToDisplay.length * 60); 
+            if (dataToDisplay.length > (containerWidth / 60)) { // Solo si hay muchos puntos
+                 chartCanvas.style.width = desiredCanvasWidth + 'px';
+            } else {
+                chartCanvas.style.width = '100%'; // O el ancho del contenedor
+            }
+             if (vitalSignsChart) vitalSignsChart.resize(); // Forzar redibujo con nuevo tamaño
         }
         
-        applyScaleButton.addEventListener('click', () => createChart(patientData));
+        applyScaleButton.addEventListener('click', () => updateChartView()); // Actualiza el gráfico con las nuevas escalas
 
         function renderDataTable() {
-            dataTableBody.innerHTML = '';
+            // ... (tu función renderDataTable existente, que usa `patientData` global) ...
+            // Esta función no necesita cambios a menos que quieras que la tabla también se filtre.
+            // Por ahora, la tabla mostrará todos los datos.
+             dataTableBody.innerHTML = '';
             if (!patientData || patientData.length === 0) {
                 console.log("renderDataTable: No hay datos para mostrar.");
                 return;
             }
-            patientData.forEach(d => {
+            // Ordenar patientData antes de mostrar en la tabla, si no está ya ordenado
+            const sortedTableData = [...patientData].sort((a, b) => {
+                const tsA = getTimestampFromDataPoint(a);
+                const tsB = getTimestampFromDataPoint(b);
+                 if (!tsA && !tsB) return 0;
+                if (!tsA) return 1; // Mover nulos al final
+                if (!tsB) return -1; // Mover nulos al final
+                return tsA.getTime() - tsB.getTime();
+            });
+
+            sortedTableData.forEach(d => {
                 const row = dataTableBody.insertRow();
-                row.insertCell().textContent = d.fecha ? new Date(d.fecha + 'T00:00:00Z').toLocaleDateString('es-ES', {timeZone: 'Europe/Madrid'}) : '-';
+                let displayDate = '-';
+                if (d.fecha) {
+                    try {
+                        // Para asegurar consistencia, parsear la fecha y luego formatear
+                        const dateObj = new Date(d.fecha + 'T00:00:00'); // Asumir que la fecha es local
+                        displayDate = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    } catch (e) {
+                        console.warn("Error al formatear fecha para la tabla:", d.fecha, e);
+                    }
+                }
+                row.insertCell().textContent = displayDate;
                 row.insertCell().textContent = d.turno || '-';
-                row.insertCell().textContent = d.temp !== undefined ? d.temp.toFixed(1) : '-';
-                row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined) ? `${d.tas}/${d.tad}` : '-';
-                row.insertCell().textContent = d.fc !== undefined ? d.fc : '-';
-                row.insertCell().textContent = d.fr !== undefined ? d.fr : '-';
-                row.insertCell().textContent = d.sato2 !== undefined ? d.sato2 : '-';
+                row.insertCell().textContent = d.temp !== undefined && d.temp !== null ? d.temp.toFixed(1) : '-';
+                row.insertCell().textContent = (d.tas !== undefined && d.tad !== undefined && d.tas !== null && d.tad !== null) ? `${d.tas}/${d.tad}` : '-';
+                row.insertCell().textContent = d.fc !== undefined && d.fc !== null ? d.fc : '-';
+                row.insertCell().textContent = d.fr !== undefined && d.fr !== null ? d.fr : '-';
+                row.insertCell().textContent = d.sato2 !== undefined && d.sato2 !== null ? d.sato2 : '-';
             });
         }
         
         inputFecha.valueAsDate = new Date(); 
 
         addDataButton.addEventListener('click', () => {
-            const fecha = inputFecha.value;
-            const turno = inputTurno.value;
-            if (!fecha) return alert("Introduce una fecha.");
+            // ... (tu lógica existente para añadir datos) ...
+            // Al final, después de ordenar patientData:
+            // patientData.sort(...); // Ya lo tienes
 
-            const existingEntryIndex = patientData.findIndex(d => d.fecha === fecha && d.turno === turno);
-            
-            const newData = {
-                fecha: fecha,
-                turno: turno,
-                temp: inputTemp.value ? parseFloat(inputTemp.value) : undefined,
-                tas: inputTAS.value ? parseInt(inputTAS.value) : undefined,
-                tad: inputTAD.value ? parseInt(inputTAD.value) : undefined,
-                fc: inputFC.value ? parseInt(inputFC.value) : undefined,
-                fr: inputFR.value ? parseInt(inputFR.value) : undefined,
-                sato2: inputSatO2.value ? parseInt(inputSatO2.value) : undefined,
-            };
-
-            if (existingEntryIndex > -1) {
-                patientData[existingEntryIndex] = {...patientData[existingEntryIndex], ...newData};
-                 alert("Registro actualizado para esta fecha y turno.");
-            } else {
-                patientData.push(newData);
-            }
-
-            patientData.sort((a, b) => {
-                const dateA = new Date(a.fecha).getTime(); const dateB = new Date(b.fecha).getTime();
-                if (dateA !== dateB) return dateA - dateB;
-                const turnoOrder = { 'M': 1, 'T': 2, 'N': 3 };
-                return turnoOrder[a.turno] - turnoOrder[b.turno];
-            });
-
-            createChart(patientData);
-            renderDataTable();
+            updateChartView(); // Actualiza el gráfico
+            renderDataTable(); // Actualiza la tabla
         });
 
         // --- Inicialización al Cargar la Página ---
-        createChart(patientData);
-        renderDataTable();
         setActiveLink(showDashboardLink);
+        updateChartView(); // Carga inicial del gráfico con el intervalo por defecto
+        renderDataTable(); // Carga inicial de la tabla
 
     </script>
 </body>
