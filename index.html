@@ -224,7 +224,16 @@
         </div>
         <div id="settingsView" class="view-container" style="display: none;">
             <h1 class="page-title">Configuración de Escalas de Ejes (Y)</h1>
-            <div class="config-section"><div class="grid-form"><div><label for="tempMin">Temp Min (°C):</label><input type="number" id="tempMin" value="34"><label for="tempMax" class="mt-2">Temp Max (°C):</label><input type="number" id="tempMax" value="42"></div><div><label for="hrMin">FC Min (lpm):</label><input type="number" id="hrMin" value="40"><label for="hrMax" class="mt-2">FC Max (lpm):</label><input type="number" id="hrMax" value="180"></div><div><label for="rrMin">FR Min (rpm):</label><input type="number" id="rrMin" value="0"><label for="rrMax" class="mt-2">FR Max (rpm):</label><input type="number" id="rrMax" value="50"></div><div><label for="bpMin">TA Min (mmHg):</label><input type="number" id="bpMin" value="40"><label for="bpMax" class="mt-2">TA Max (mmHg):</label><input type="number" id="bpMax" value="220"></div><div><label for="sato2Min">SatO2 Min (%):</label><input type="number" id="sato2Min" value="90"><label for="sato2Max" class="mt-2">SatO2 Max (%):</label><input type="number" id="sato2Max" value="100"></div></div><button id="applyScaleConfig" class="button"><i class="fas fa-ruler-combined"></i> Aplicar Escalas</button></div>
+            <div class="config-section">
+                <div class="grid-form">
+                    <div><label for="tempMin">Temp Min (°C):</label><input type="number" id="tempMin" value="34"><label for="tempMax" class="mt-2">Temp Max (°C):</label><input type="number" id="tempMax" value="42"></div>
+                    <div><label for="hrMin">FC Min (lpm):</label><input type="number" id="hrMin" value="40"><label for="hrMax" class="mt-2">FC Max (lpm):</label><input type="number" id="hrMax" value="180"></div>
+                    <div><label for="rrMin">FR Min (rpm):</label><input type="number" id="rrMin" value="0"><label for="rrMax" class="mt-2">FR Max (rpm):</label><input type="number" id="rrMax" value="50"></div>
+                    <div><label for="bpMin">TA Min (mmHg):</label><input type="number" id="bpMin" value="40"><label for="bpMax" class="mt-2">TA Max (mmHg):</label><input type="number" id="bpMax" value="220"></div>
+                    <div><label for="sato2Min">SatO₂ Min (%):</label><input type="number" id="sato2Min" value="90"><label for="sato2Max" class="mt-2">SatO₂ Max (%):</label><input type="number" id="sato2Max" value="100"></div>
+                </div>
+                <button id="applyScaleConfig" class="button"><i class="fas fa-ruler-combined"></i> Aplicar Escalas</button>
+            </div>
         </div>
     </main>
     <div id="csvUploaderModal" class="modal"><div class="modal-content"><span class="modal-close" id="closeCsvModal">&times;</span><div id="csvUploaderContainer"><h1>Cargar Datos CSV</h1><p class="text-sm text-gray-600 mb-3">Puedes cargar un archivo CSV local o desde una URL de Google Sheets publicada como CSV.</p><label for="googleSheetUrlInput" class="block text-sm font-medium text-gray-700 mb-1">URL de Google Sheet (publicada como CSV):</label><input type="url" id="googleSheetUrlInput" placeholder="Pega aquí la URL del CSV publicado" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vThcYOP6TMxWvWw3n-DfBeQfJSvOmtZe1WpHM3sOl7yus_tvuxgn6tTcmUf5C3oR0CiPglW-7_TOCOI/pub?output=csv" class="mb-2"><button id="loadFromUrlButton" class="button button-load-url w-full"><i class="fas fa-cloud-download-alt"></i>Cargar desde URL</button><p class="text-center my-3 text-gray-500 text-sm font-medium">O carga un archivo local:</p><div id="dropZone"><p><i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i><br>Arrastra y suelta un archivo CSV aquí, o haz clic para seleccionar.</p></div><input type="file" id="csvFileInput" accept=".csv" class="hidden"> <div id="messageAreaModal" class="message-box info" style="display: none;"></div><div id="csvDataTableContainerModal"><table id="csvDataTableModal"><thead><tr id="csvHeaderRowModal"></tr></thead><tbody id="csvBodyModal"></tbody></table></div></div></div></div>
@@ -259,6 +268,7 @@
         let currentlyDisplayedData = [];
 
         // --- Elementos del DOM ---
+        // (Sin cambios respecto a la versión anterior)
         const dashboardView = document.getElementById('dashboardView');
         const settingsView = document.getElementById('settingsView');
         const showDashboardLink = document.getElementById('showDashboardLink');
@@ -294,6 +304,7 @@
         const csvBodyModal = document.getElementById('csvBodyModal');
 
         // --- Lógica de Navegación y UI ---
+        // (Sin cambios)
         function showMainView(viewToShow) { dashboardView.style.display = 'none'; settingsView.style.display = 'none'; if (viewToShow === 'dashboard') dashboardView.style.display = 'block'; else if (viewToShow === 'settings') settingsView.style.display = 'block'; }
         showDashboardLink.addEventListener('click', (e) => { e.preventDefault(); setActiveLink(showDashboardLink); showMainView('dashboard'); setTimeout(() => { if (vitalSignsChart && chartContainer.offsetWidth > 0) vitalSignsChart.resize(); }, 50); });
         showSettingsLink.addEventListener('click', (e) => { e.preventDefault(); setActiveLink(showSettingsLink); showMainView('settings'); });
@@ -305,7 +316,7 @@
         function setActiveLink(activeLink) { document.querySelectorAll('#sidebar nav ul li a').forEach(link => link.classList.remove('active')); if(activeLink) activeLink.classList.add('active'); }
         
         // --- Lógica del Cargador de CSV ---
-        // (Tu lógica de CSV existente - sin cambios)
+        // (Sin cambios)
         dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (event) => { event.preventDefault(); dropZone.classList.remove('dragover'); const files = event.dataTransfer.files; if (files.length > 0 && files[0].name.endsWith('.csv')) handleLocalCsvFile(files[0]); else showMessageInModal('Por favor, suelta un archivo CSV.', 'error'); });
@@ -381,74 +392,98 @@
             id: 'customAnnotations',
             afterDatasetsDraw: (chart) => {
                 const { ctx, data, chartArea: { top, bottom, left, right }, scales } = chart;
-                if (!currentlyDisplayedData || currentlyDisplayedData.length === 0 || !chart.data.datasets[0] || chartContainer.offsetWidth === 0 || !showValuesCheckbox.checked) return;
+                if (!currentlyDisplayedData || currentlyDisplayedData.length === 0 || !chart.data.datasets[0] || chartContainer.offsetWidth === 0 ) return; // No depender de showValuesCheckbox para las líneas de TA
                 
                 ctx.save();
-                ctx.font = 'bold 9px Inter';
-                ctx.textAlign = 'center';
-
-                // Helper para dibujar texto, evitando que se salga del área del gráfico
-                const drawAnnotationText = (text, x, y, color = '#333') => {
-                    // Un pequeño padding para que no quede pegado a los bordes
-                    const padding = 5;
-                    if (x >= left - padding && x <= right + padding && y > top - 15 && y < bottom + 15) {
-                        ctx.fillStyle = color;
-                        ctx.fillText(text, x, y);
-                    }
-                };
                 
-                // Paleta de colores (debe coincidir con la usada en createChart)
+                // Paleta de colores
                 const annotationColors = {
                     temp: '#FFB74D', tas: '#E57373', tad: '#64B5F6',
-                    fc: '#4DB6AC', fr: '#90A4AE', sato2: '#BA68C8'
+                    fc: '#4DB6AC', fr: '#90A4AE', sato2: '#BA68C8',
+                    taLine: 'rgba(120, 120, 120, 0.6)' // Color para la línea vertical de TA
                 };
 
-                // Iterar sobre los datos que se están mostrando actualmente en el gráfico
                 currentlyDisplayedData.forEach((pData) => {
                     if (!pData.timestamp) return;
 
-                    // Encontrar el índice del punto de dato actual en los datos del gráfico
-                    // Asumimos que el primer dataset tiene todos los timestamps o es representativo
                     const chartDataIndex = chart.data.datasets[0].data.findIndex(dp => dp && dp.x && dp.x === pData.timestamp);
                     if (chartDataIndex === -1) return;
 
-                    // Obtener la posición X del punto
-                    const baseMeta = chart.getDatasetMeta(0); // Usar el primer dataset para la posición X
+                    const baseMeta = chart.getDatasetMeta(0);
                     if (!baseMeta.data || !baseMeta.data[chartDataIndex]) return;
                     const xPos = baseMeta.data[chartDataIndex].x;
 
-                    // Anotación para Tensión Arterial (combinada)
+                    // Dibujar línea vertical para Tensión Arterial
                     if (pData.tas !== undefined && pData.tad !== undefined) {
+                        const systolicDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Sistólica');
                         const diastolicDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Diastólica');
-                        if (diastolicDatasetIndex !== -1) {
+
+                        if (systolicDatasetIndex !== -1 && diastolicDatasetIndex !== -1) {
+                            const metaTAS = chart.getDatasetMeta(systolicDatasetIndex);
                             const metaTAD = chart.getDatasetMeta(diastolicDatasetIndex);
-                            if (metaTAD.data[chartDataIndex] && scales.yBP) {
-                                const yPosAnchor = metaTAD.data[chartDataIndex].y;
-                                drawAnnotationText(`${pData.tas}/${pData.tad}`, xPos, yPosAnchor + 12, annotationColors.tas);
-                            }
-                        }
-                    }
 
-                    // Anotaciones individuales para otras constantes
-                    const annotationsConfig = [
-                        { key: 'temp', label: 'Temperatura', color: annotationColors.temp, yOffset: -8 },
-                        { key: 'fc', label: 'Frec. Cardíaca', color: annotationColors.fc, yOffset: -8 },
-                        { key: 'fr', label: 'Frec. Respiratoria', color: annotationColors.fr, yOffset: 8 },
-                        { key: 'sato2', label: 'Sat. O₂', color: annotationColors.sato2, yOffset: 8 }
-                    ];
-
-                    annotationsConfig.forEach(config => {
-                        if (pData[config.key] !== undefined) {
-                            const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === config.label);
-                            if (datasetIndex !== -1) {
-                                const meta = chart.getDatasetMeta(datasetIndex);
-                                if (meta.data[chartDataIndex]) {
-                                    const yPos = meta.data[chartDataIndex].y;
-                                    drawAnnotationText(String(pData[config.key]), xPos, yPos + config.yOffset, config.color);
+                            if (metaTAS.data[chartDataIndex] && metaTAD.data[chartDataIndex] && scales.yBP) {
+                                const yTAS = metaTAS.data[chartDataIndex].y;
+                                const yTAD = metaTAD.data[chartDataIndex].y;
+                                
+                                // Asegurarse que los puntos estén dentro del área visible antes de dibujar
+                                if (xPos >= left && xPos <= right && Math.min(yTAS, yTAD) <= bottom && Math.max(yTAS, yTAD) >= top) {
+                                    ctx.beginPath();
+                                    ctx.strokeStyle = annotationColors.taLine; 
+                                    ctx.lineWidth = 2; // Ancho de la línea vertical de TA
+                                    ctx.moveTo(xPos, yTAS);
+                                    ctx.lineTo(xPos, yTAD);
+                                    ctx.stroke();
                                 }
                             }
                         }
-                    });
+                    }
+                    
+                    // Anotaciones de texto (solo si showValuesCheckbox está marcado)
+                    if (showValuesCheckbox.checked) {
+                        ctx.font = 'bold 9px Inter';
+                        ctx.textAlign = 'center';
+                        const drawAnnotationText = (text, x, y, color = '#333') => {
+                            const padding = 5; 
+                            if (x >= left - padding && x <= right + padding && y > top - 15 && y < bottom + 15) {
+                                ctx.fillStyle = color;
+                                ctx.fillText(text, x, y);
+                            }
+                        };
+
+                        // Anotación para Tensión Arterial (texto)
+                        if (pData.tas !== undefined && pData.tad !== undefined) {
+                             const diastolicDatasetIndex = chart.data.datasets.findIndex(ds => ds.label === 'Diastólica');
+                             if (diastolicDatasetIndex !== -1) {
+                                 const metaTAD = chart.getDatasetMeta(diastolicDatasetIndex);
+                                 if (metaTAD.data[chartDataIndex] && scales.yBP) {
+                                     const yPosAnchor = metaTAD.data[chartDataIndex].y;
+                                     drawAnnotationText(`${pData.tas}/${pData.tad}`, xPos, yPosAnchor + 12, annotationColors.tas);
+                                 }
+                             }
+                        }
+
+                        // Anotaciones individuales para otras constantes
+                        const annotationsConfig = [
+                            { key: 'temp', label: 'Temperatura', color: annotationColors.temp, yOffset: -8 },
+                            { key: 'fc', label: 'Frec. Cardíaca', color: annotationColors.fc, yOffset: -8 },
+                            { key: 'fr', label: 'Frec. Respiratoria', color: annotationColors.fr, yOffset: 8 },
+                            { key: 'sato2', label: 'Sat. O₂', color: annotationColors.sato2, yOffset: 8 }
+                        ];
+
+                        annotationsConfig.forEach(config => {
+                            if (pData[config.key] !== undefined) {
+                                const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === config.label);
+                                if (datasetIndex !== -1) {
+                                    const meta = chart.getDatasetMeta(datasetIndex);
+                                    if (meta.data[chartDataIndex]) {
+                                        const yPos = meta.data[chartDataIndex].y;
+                                        drawAnnotationText(String(pData[config.key]), xPos, yPos + config.yOffset, config.color);
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
                 ctx.restore();
             }
@@ -468,20 +503,18 @@
                 ctxChart.clearRect(0,0,chartCanvas.width,chartCanvas.height); 
                 ctxChart.font="16px Inter"; ctxChart.fillStyle="#555"; ctxChart.textAlign="center"; 
                 ctxChart.fillText("No hay datos para período/granularidad.", chartCanvas.width/2, chartCanvas.height/2); 
-                chartCanvas.style.width='100%'; 
+                chartCanvas.style.width='100%'; // Reset canvas width
                 return; 
             }
             
-            // --- Parámetros de visualización del eje X (tu lógica existente) ---
-            let timeUnit, tooltipFormat, minRotation = 0, maxRotation = 50, autoSkip = true, stepSizeX /* no usado directamente en ticks.x */ ;
-            let barThickness = 10; // Aunque ya no usamos barras para TA, lo mantenemos por si acaso
+            let timeUnit, tooltipFormat, minRotation = 0, maxRotation = 50, autoSkip = true;
 
             switch(granularity) {
-                case '30min': timeUnit = 'minute'; /*stepSizeX = 30;*/ autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break;
-                case 'hourly': timeUnit = 'hour'; /*stepSizeX = 1;*/ autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break;
-                case 'shift': timeUnit = 'hour'; /*stepSizeX = 8;*/ autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break; 
-                case 'daily': timeUnit = 'day'; /*stepSizeX = 1;*/ autoSkip = true; tooltipFormat = 'dd/MM/yy'; break;
-                default: timeUnit = 'hour'; /*stepSizeX = 1;*/ autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; 
+                case '30min': timeUnit = 'minute'; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break;
+                case 'hourly': timeUnit = 'hour'; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break;
+                case 'shift': timeUnit = 'hour'; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; break; 
+                case 'daily': timeUnit = 'day'; autoSkip = true; tooltipFormat = 'dd/MM/yy'; break;
+                default: timeUnit = 'hour'; autoSkip = false; tooltipFormat = 'HH:mm dd/MM'; 
             }
 
             if (interval === '24h') { minRotation = 30; autoSkip = false; }
@@ -492,7 +525,6 @@
                 if (granularity === 'daily' || granularity === 'shift') { timeUnit = 'day'; autoSkip = true; } 
                 else { timeUnit = 'hour'; autoSkip = true; }
             }
-            // --- Fin parámetros eje X ---
 
             const timestamps = dataToDisplay.map(d => d.timestamp).filter(ts => ts !== null); 
             let minXDate = timestamps.length > 0 ? new Date(Math.min(...timestamps)) : new Date();
@@ -500,36 +532,33 @@
             
             if (timestamps.length > 0) {
                 const firstTimestamp = minXDate.valueOf(); const lastTimestamp = maxXDate.valueOf();
-                let padding = 3600000 * 1; // 1 hora de padding por defecto
-                if (interval === '24h') { minXDate.setHours(0,0,0,0); maxXDate = new Date(minXDate); maxXDate.setHours(23,59,59,999); }
-                else { const range = lastTimestamp - firstTimestamp; if (granularity === '30min') padding = Math.max(3600000 * 3, range * 0.05); else if (granularity === 'hourly') padding = Math.max(3600000 * 6, range * 0.05); else if (granularity === 'shift') padding = Math.max(3600000 * 12, range * 0.05); else padding = Math.max(3600000 * 24, range * 0.05); minXDate = new Date(firstTimestamp - padding); maxXDate = new Date(lastTimestamp + padding); }
+                let padding = 3600000 * 1; 
+                if (interval === '24h') { 
+                    minXDate.setHours(0,0,0,0); 
+                    maxXDate = new Date(minXDate); 
+                    maxXDate.setHours(23,59,59,999); 
+                } else { 
+                    const range = lastTimestamp - firstTimestamp; 
+                    if (granularity === '30min') padding = Math.max(3600000 * 3, range * 0.05); 
+                    else if (granularity === 'hourly') padding = Math.max(3600000 * 6, range * 0.05); 
+                    else if (granularity === 'shift') padding = Math.max(3600000 * 12, range * 0.05); 
+                    else padding = Math.max(3600000 * 24, range * 0.05); 
+                    minXDate = new Date(firstTimestamp - padding); 
+                    maxXDate = new Date(lastTimestamp + padding); 
+                }
             }
             
-            // --- Definición de Estilos Comunes para las Líneas ---
             const commonLineStyles = {
-                type: 'line',
-                tension: 0.4, 
-                borderWidth: 2.5, 
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                pointBackgroundColor: 'white', 
-                pointHoverBackgroundColor: 'white',
-                pointBorderWidth: 1.5, 
-                pointHoverBorderWidth: 2,
-                spanGaps: true 
+                type: 'line', tension: 0.4, borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5,
+                pointBackgroundColor: 'white', pointHoverBackgroundColor: 'white',
+                pointBorderWidth: 1.5, pointHoverBorderWidth: 2, spanGaps: true 
             };
 
-            // --- Paleta de Colores ---
             const colors = {
-                temp: '#FFB74D',   // Naranja Suave
-                tas: '#E57373',    // Rojo Suave
-                tad: '#64B5F6',    // Azul Claro
-                fc: '#4DB6AC',     // Teal/Cyan
-                fr: '#90A4AE',     // Gris Azulado
-                sato2: '#BA68C8'   // Púrpura Suave
+                temp: '#FFB74D', tas: '#E57373', tad: '#64B5F6',
+                fc: '#4DB6AC', fr: '#90A4AE', sato2: '#BA68C8'
             };
 
-            // --- Definición de DATASETS con el nuevo estilo ---
             const datasets = [
                 { ...commonLineStyles, label: 'Temperatura', data: dataToDisplay.map(d => ({ x: d.timestamp, y: d.temp })), borderColor: colors.temp, pointBorderColor: colors.temp, yAxisID: 'yTemp', order: 1 },
                 { ...commonLineStyles, label: 'Sistólica', data: dataToDisplay.map(d => ({ x: d.timestamp, y: d.tas })), borderColor: colors.tas, pointBorderColor: colors.tas, yAxisID: 'yBP', order: 2 },
@@ -539,7 +568,6 @@
                 { ...commonLineStyles, label: 'Sat. O₂', data: dataToDisplay.map(d => ({ x: d.timestamp, y: d.sato2 })), borderColor: colors.sato2, pointBorderColor: colors.sato2, yAxisID: 'ySatO2', hidden: false, order: 6 }
             ];
             
-            // --- Configuración de SCALES (Ejes) ---
             let scalesOptions = {
                 x: {
                     type: 'time',
@@ -555,30 +583,42 @@
                 yFR: { type: 'linear', position: 'right', display: true, min: parseFloat(document.getElementById('rrMin').value), max: parseFloat(document.getElementById('rrMax').value), title: { display: true, text: 'FR (rpm)', color: colors.fr, font:{weight:'bold'}}, ticks: { color: colors.fr, stepSize: 5 }, grid: { drawOnChartArea: false }, offset: true }
             };
             
-            // --- Lógica para ANCHO DEL CANVAS y SCROLL HORIZONTAL (ajustada) ---
+            // --- Lógica para ANCHO DEL CANVAS y SCROLL HORIZONTAL (AJUSTADA) ---
             const currentContainerWidth = chartContainer.offsetWidth;
             let desiredCanvasWidth = currentContainerWidth;
             const numDataPoints = dataToDisplay.length;
 
             if (numDataPoints > 0 && currentContainerWidth > 0) {
-                let minPxPerSlot = 20; 
-                let totalSlotsInInterval = 0;
-                const dayInMillis = 24 * 60 * 60 * 1000;
-                const intervalDurationMillis = maxXDate.valueOf() - minXDate.valueOf();
-                const intervalDurationDays = Math.max(1, intervalDurationMillis / dayInMillis);
-
-                if (granularity === '30min') { totalSlotsInInterval = intervalDurationDays * 48; minPxPerSlot = 25; }
-                else if (granularity === 'hourly') { totalSlotsInInterval = intervalDurationDays * 24; minPxPerSlot = 30; }
-                else if (granularity === 'shift') { totalSlotsInInterval = intervalDurationDays * 3; minPxPerSlot = 60; }
-                else if (granularity === 'daily') { totalSlotsInInterval = intervalDurationDays; minPxPerSlot = 70; }
-
-                const widthBasedOnSlots = totalSlotsInInterval * minPxPerSlot;
-                const widthBasedOnDataPoints = numDataPoints * 15;
-                desiredCanvasWidth = Math.max(currentContainerWidth, widthBasedOnSlots, widthBasedOnDataPoints);
+                let minPxPerSlot; // Ajustado para ser más generoso
                 
-                console.log(`[Chart Width Calc] Gran: ${granularity}, Int: ${interval}, ContWidth: ${currentContainerWidth}, Desired: ${desiredCanvasWidth}, Slots: ${totalSlotsInInterval}, Px/Slot: ${minPxPerSlot}`);
+                // Determinar minPxPerSlot basado en granularidad e intervalo para asegurar suficiente espacio
+                if (granularity === '30min') minPxPerSlot = (interval === '24h' || interval === '3days') ? 20 : 15;
+                else if (granularity === 'hourly') minPxPerSlot = (interval === '24h' || interval === '3days') ? 30 : 20;
+                else if (granularity === 'shift') minPxPerSlot = (interval === '1week' || interval === '2weeks' || interval === '1month') ? 50 : 40;
+                else if (granularity === 'daily') minPxPerSlot = (interval === '2weeks' || interval === '1month') ? 70 : 50;
+                else minPxPerSlot = 25; // Default
+
+                // Si hay muchos puntos, asegurar un mínimo de píxeles por punto también
+                const widthPerDataPoint = numDataPoints * ((granularity === 'daily' && interval === '1month') ? 20 : 15);
+
+
+                const timeRangeMilliseconds = maxXDate.valueOf() - minXDate.valueOf();
+                let estimatedSlots;
+                if (granularity === '30min') estimatedSlots = timeRangeMilliseconds / (30 * 60 * 1000);
+                else if (granularity === 'hourly') estimatedSlots = timeRangeMilliseconds / (60 * 60 * 1000);
+                else if (granularity === 'shift') estimatedSlots = timeRangeMilliseconds / (8 * 60 * 60 * 1000);
+                else if (granularity === 'daily') estimatedSlots = timeRangeMilliseconds / (24 * 60 * 60 * 1000);
+                else estimatedSlots = numDataPoints; // Fallback
+
+                estimatedSlots = Math.max(estimatedSlots, numDataPoints); // Asegurar que al menos tengamos en cuenta los puntos
+
+                const widthBasedOnSlots = estimatedSlots * minPxPerSlot;
+                
+                desiredCanvasWidth = Math.max(currentContainerWidth, widthBasedOnSlots, widthPerDataPoint);
+                
+                // console.log(`[Chart Width Calc] Gran: ${granularity}, Int: ${interval}, ContWidth: ${currentContainerWidth}, Desired: ${desiredCanvasWidth.toFixed(0)}, Slots: ${estimatedSlots.toFixed(0)}, Px/Slot: ${minPxPerSlot}`);
             }
-            desiredCanvasWidth = Math.min(desiredCanvasWidth, 30000);
+            desiredCanvasWidth = Math.min(desiredCanvasWidth, 30000); // Límite máximo
             chartCanvas.style.width = `${desiredCanvasWidth}px`;
             // --- Fin lógica ancho canvas ---
 
@@ -599,14 +639,17 @@
                 setTimeout(() => { if (vitalSignsChart) { vitalSignsChart.resize(); } }, 0); 
             }
         }
-        // ========================================================================
         
         applyScaleButton.addEventListener('click', () => { 
-            // Actualizar también los min/max para SatO2 si es necesario
-            document.getElementById('sato2Min').value = scalesOptions.ySatO2.min; // Esto es un ejemplo, debes tener inputs para SatO2
-            document.getElementById('sato2Max').value = scalesOptions.ySatO2.max; // o leerlos de los inputs si ya existen.
             updateChartView(); 
-            alert("Escalas actualizadas. Vuelve al 'Dashboard Gráfico' para ver cambios."); 
+            const modalMessage = document.createElement('div');
+            modalMessage.textContent = "Escalas actualizadas. Vuelve al 'Dashboard Gráfico' para ver cambios.";
+            modalMessage.style.position = 'fixed'; modalMessage.style.bottom = '20px'; modalMessage.style.left = '50%';
+            modalMessage.style.transform = 'translateX(-50%)'; modalMessage.style.backgroundColor = '#333';
+            modalMessage.style.color = 'white'; modalMessage.style.padding = '10px 20px';
+            modalMessage.style.borderRadius = '5px'; modalMessage.style.zIndex = '1000';
+            document.body.appendChild(modalMessage);
+            setTimeout(() => { document.body.removeChild(modalMessage); }, 3000);
         });
         
         function renderDataTable() { dataTableBody.innerHTML = ''; patientData.forEach(data => { const row = dataTableBody.insertRow(); row.insertCell().textContent = data.fecha || '-'; row.insertCell().textContent = data.hora || '-'; row.insertCell().textContent = data.turno || '-'; row.insertCell().textContent = data.temp !== undefined ? data.temp.toFixed(1) : '-'; row.insertCell().textContent = (data.tas && data.tad) ? `${data.tas}/${data.tad}`: '-'; row.insertCell().textContent = data.fc || '-'; row.insertCell().textContent = data.fr || '-'; row.insertCell().textContent = data.sato2 || '-'; }); }
@@ -615,7 +658,15 @@
             const fecha = inputFecha.value; const hora = inputHoraMinutos.value; const turno = inputTurno.value;
             const temp = parseFloat(inputTemp.value) || undefined; const tas = parseInt(inputTAS.value) || undefined; const tad = parseInt(inputTAD.value) || undefined;
             const fc = parseInt(inputFC.value) || undefined; const fr = parseInt(inputFR.value) || undefined; const sato2 = parseInt(inputSatO2.value) || undefined;
-            if (!fecha || (!hora && !turno)) { alert("Por favor, introduce al menos fecha y hora o turno."); return; }
+            if (!fecha || (!hora && !turno)) { 
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message-box error'; // Reutilizar estilo de mensaje
+                errorDiv.textContent = "Por favor, introduce al menos fecha y hora o turno.";
+                errorDiv.style.marginTop = '10px';
+                addDataButton.parentNode.insertBefore(errorDiv, addDataButton.nextSibling);
+                setTimeout(() => errorDiv.remove(), 3000);
+                return; 
+            }
             const newDataPoint = { fecha, hora, turno, temp, tas, tad, fc, fr, sato2 };
             if (!newDataPoint.hora) {
                 if (newDataPoint.turno === 'M') newDataPoint.hora = '08:00';
